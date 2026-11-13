@@ -163,13 +163,18 @@ for (let pole = 0; pole < 2; pole++) {
   const cityRun = 'city' + pole
   const out = city.p['out' + k]
   const zin = zA.p['in' + k]
-  const yOut = 156 + pole * 11
   const gap = 104 + pole * 10
-  // оба отвода с клеммы выхода ввода — гильза на автомате
-  add([out, { x: out.x, y: yOut }, { x: gap, y: yOut }, { x: gap, y: yTop }, { x: zin.x, y: yTop }, zin], 'grid', pole, cityRun, viaCity)
+  // короткий выход → Y-развилка под углом влево/вправо, дальше два провода
+  const tee = { x: out.x, y: out.y + 12 }
+  const left = { x: out.x - 22, y: out.y + 28 }
+  const right = { x: out.x + 22, y: out.y + 28 }
+  add([out, tee], 'grid', pole, cityRun, viaCity)
+  add([tee, left], 'grid', pole, cityRun, viaCity)
+  add([tee, right], 'grid', pole, cityRun, viaCity)
+  add([right, { x: gap, y: right.y }, { x: gap, y: yTop }, { x: zin.x, y: yTop }, zin], 'grid', pole, cityRun, viaCity)
   const yCable = 220 + pole * 11
   const cityG = { x: R + pole * 12, y: yCable }
-  add([out, { x: out.x, y: yCable }, cityG], 'grid', pole, cityRun, viaCity)
+  add([left, { x: left.x, y: yCable }, cityG], 'grid', pole, cityRun, viaCity)
   const yIn = 460 + pole * 11
   const cityIn = { x: R + pole * 12, y: yIn }
   add([cityG, cityIn], 'grid', pole, cityRun, viaCity)

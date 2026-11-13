@@ -114,9 +114,16 @@ for (let pole = 0; pole < 2; pole++) {
   const yOut = 286 + pole * 8
   const gx = 96 + pole * 5
   const yTop = 164 + pole * 8
-  // оба отвода с клеммы выхода ввода — гильза на автомате
-  add([out, [out[0], yOut], [gx, yOut], [gx, yTop], [zin[0], yTop], zin], 'grid', pole, 'city' + pole, viaCity)
-  run(out, edge(st[0], pole, 'top'), 360, 'grid', pole, 'city' + pole, viaCity)
+  // короткий выход → Y-развилка под углом влево/вправо
+  const tee = [out[0], out[1] + 10]
+  const left = [out[0] - 18, out[1] + 24]
+  const right = [out[0] + 18, out[1] + 24]
+  add([out, tee], 'grid', pole, 'city' + pole, viaCity)
+  add([tee, left], 'grid', pole, 'city' + pole, viaCity)
+  add([tee, right], 'grid', pole, 'city' + pole, viaCity)
+  add([right, [gx, right[1]], [gx, yTop], [zin[0], yTop], zin], 'grid', pole, 'city' + pole, viaCity)
+  const stoIn = edge(st[0], pole, 'top')
+  add([left, [left[0], 360 + pole * 8], [stoIn[0], 360 + pole * 8], stoIn], 'grid', pole, 'city' + pole, viaCity)
   run(edge(r1[1], pole, 'bot'), sftI(r1[2], pole), 300, 'grid', pole, undefined, viaZA)
   const qBot = edge(st[0], pole, 'bot')
   const zTop = edge(st[1], pole, 'top')
