@@ -1,0 +1,20 @@
+---
+description: Бейдж Ponytail лише якщо код цього ходу писався за скілом Ponytail.
+alwaysApply: true
+---
+
+# Ponytail chat badge
+
+Останнім блоком відповіді вставляти бейдж **лише якщо** в цьому ході агент змінював код і перед цим прочитав `.cursor/skills/ponytail/SKILL.md` та писав цей код за його драбиною.
+
+Не ставити бейдж, якщо скіл у цьому ході не читався, навіть коли файли змінилися. Не ставити на Q&A, healthcheck, план без коду, правки лише rules, docs або конфігу.
+
+Лого лише цим https: trim + білий непрозорий фон + `cover` у квадрат (без letterbox зверху/знизу). Не `contain`. Не raw GitHub 1085px. Не локальний шлях.
+
+```markdown
+---
+
+<img src="https://wsrv.nl/?url=https://raw.githubusercontent.com/DietrichGebert/ponytail/main/assets/logo-dark.png&trim=1&w=48&h=48&fit=cover&a=attention&bg=white&output=jpg" alt="Ponytail" width="48" height="48" /> **Код написано з урахуванням Ponytail**
+```
+
+Один раз на відповідь, внизу.
