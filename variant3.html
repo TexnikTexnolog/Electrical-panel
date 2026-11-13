@@ -234,10 +234,10 @@ for (let pole = 0; pole < 2; pole++) {
   add([q2in, qTee], 'ret', pole, outG)
   add([qTee, qArmL], 'ret', pole, outG)
   add([qTee, qArmR], 'ret', pole, outG)
-  const retG = { x: R + 28 + pole * 20, y: qArmR.y }
-  const retTop = { x: retG.x, y: 198 + pole * PS }
+  // рейки рядом — короткий ход вверх к паре II квартирного переключателя
   const aptII = sA.p['ii' + k]
-  add([qArmR, { x: retG.x, y: qArmR.y }, retG, retTop, { x: aptII.x, y: retTop.y }, aptII], 'ret', pole, outG)
+  const midY = qArmR.y - 40 - pole * PS
+  add([qArmR, { x: qArmR.x + 24, y: midY }, { x: aptII.x, y: midY }, aptII], 'ret', pole, outG)
   const q2o = q2.p['out' + k]
   const dIn = dif2.p['in' + k]
   const rise = pole ? dif2.x + dif2.w + 8 : q2.x + q2.w + 8

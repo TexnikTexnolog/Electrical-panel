@@ -177,8 +177,8 @@ for (let pole = 0; pole < 2; pole++) {
   add([qTee, qLeft], 'ret', pole, ret)
   add([qTee, qRight], 'ret', pole, ret)
   const aptII = sftII(r1[2], pole)
-  const gutter = [1564 + pole * 8, qRight[1]]
-  add([qRight, gutter, [gutter[0], 150], [aptII[0], 150], aptII], 'ret', pole, ret + 'apt')
+  const midY = qRight[1] - 36 - pole * 8
+  add([qRight, [qRight[0] + 20, midY], [aptII[0], midY], aptII], 'ret', pole, ret)
 }
 
 function phaseBus(src, group, y, kind, id, viaBus) {
