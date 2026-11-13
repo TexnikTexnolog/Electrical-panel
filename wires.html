@@ -154,8 +154,14 @@ for (let pole = 0; pole < 2; pole++) {
   const o = sftOut(st[4], pole)
   const q2in = edge(r2[0], pole, 'top')
   const tbPort = pole ? bot(tb) : top(tb)
-  // разветление на выходе переключателя: колодка / вход рейки 2
-  run(o, tbPort, pole ? 520 : 400, 'sto', pole, sto + 'tb')
+  // короткий выход вверх → Y влево/вправо: колодка / рейка 2
+  const tee = [o[0], o[1] - 10]
+  const left = [o[0] - 18, o[1] - 24]
+  const right = [o[0] + 18, o[1] - 24]
+  add([o, tee], 'ret', pole, ret)
+  add([tee, left], 'ret', pole, ret)
+  add([tee, right], 'sto', pole, sto + 'tb')
+  add([right, [right[0], pole ? 520 : 400], [tbPort[0], pole ? 520 : 400], tbPort], 'sto', pole, sto + 'tb')
   if (pole === 0) {
     run(top(tb), top(st[5]), 388, 'sto', 0, sto, ['sock'])
     run(top(tb), top(st[6]), 376, 'sto', 0, sto, ['lamp'])
@@ -163,7 +169,7 @@ for (let pole = 0; pole < 2; pole++) {
     run(bot(tb), bot(st[5]), 540, 'sto', 1, sto, ['sock'])
     run(bot(tb), bot(st[6]), 548, 'sto', 1, sto, ['lamp'])
   }
-  run(o, q2in, 150, 'ret', pole, ret)
+  add([left, [left[0], 150 + pole * 8], [q2in[0], 150 + pole * 8], q2in], 'ret', pole, ret)
   // разветление на входе рейки 2: вверх в переключатель квартиры
   const gutter = [1564 + pole * 8, 150]
   add([q2in, [q2in[0], 150 + pole * 8], gutter], 'ret', pole, ret)
