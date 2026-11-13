@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Схема проводов</title>
+<style>
+  body { margin: 0; background: #e7e9ee; color: #1c1c1c; font: 13px/1.3 system-ui, sans-serif; }
+  a { color: #1a4fbf; }
+  button { font: inherit; padding: 3px 10px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  button.on { background: #222; color: #fff; }
+  .badge { padding: 2px 8px; border-radius: 4px; font-weight: 700; background: #d7f2d7; color: #145214; }
+  .legend i { display: inline-block; width: 16px; height: 8px; margin: 0 3px 0 8px; vertical-align: middle; }
+  svg { width: 100%; height: calc(100vh - 52px); background: #eef0f4; }
+  .box { fill: #fffdf8; stroke: #5c6570; stroke-width: 1.2; }
+  .inv { fill: #fff6e0; stroke: #c47d12; }
+  .nm { font-size: 10px; fill: #222; }
+  .pt { font-size: 9px; fill: #555; }
+  .tag { font-size: 12px; fill: #222; font-weight: 700; }
+  .note { font-size: 11px; fill: #333; }
+  .lev { cursor: pointer; }
+  .w { fill: none; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+  .hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
+  .run:hover .w { stroke-width: 5.2; filter: drop-shadow(0 0 2px #fff); }
+  .grid-L { stroke: #8b5a2b; } .grid-N { stroke: #1f5fbf; }
+  .load-L { stroke: #f08a00; } .load-N { stroke: #5bc0eb; }
+  .dead { stroke: #b7bcc4; }
+  .bar.grid-N { fill: #1f5fbf; } .bar.load-N { fill: #5bc0eb; } .bar.dead { fill: #b7bcc4; }
+  .pe { stroke: #2e9b3a; }
+  .swatch { display: inline-block; width: 16px; height: 8px; margin-right: 3px; vertical-align: middle; }
+</style>
+</head>
+<body>
+<link rel="stylesheet" href="scheme/nav.css">
+<header class="site">
+  <nav id="views"></nav>
+  <script src="scheme/nav.js"></script>
+  <span>Переключатель Кладовка
+    <button data-g="storage" data-v="0">0</button><button data-g="storage" data-v="1">I</button><button data-g="storage" data-v="2">II</button>
+  </span>
+  <span>Переключатель Квартира
+    <button data-g="apartment" data-v="0">0</button><button data-g="apartment" data-v="1">I</button><button data-g="apartment" data-v="2">II</button>
+  </span>
+  <span id="badge" class="badge"></span>
+  <span id="status"></span>
+  <span class="legend">
+    <i class="swatch" style="background:#8b5a2b"></i>L город
+    <i class="swatch" style="background:#1f5fbf"></i>N город
+    <i class="swatch" style="background:#f08a00"></i>L Load
+    <i class="swatch" style="background:#5bc0eb"></i>N Load
+    <i class="swatch" style="background:#b7bcc4"></i>нет
+    <i class="swatch" style="background:repeating-linear-gradient(90deg,#f2d600 0 4px,#2e9b3a 4px 8px)"></i>PE
+  </span>
+</header>
+<svg id="svg" viewBox="0 0 1600 860"></svg>
+<script type="module">
+import { devices, energize, gateBreakers, selfCheck } from './scheme/circuit.js'
+import { applyHops } from './scheme/hop.js'
+
+const MW = 30, GAP = 18, H = 92
+const pos = { storage: 1, apartment: 1 }
+const sw = {}
+const on = (id) => sw[id] !== false
+const live = (via) => !via || via.every(on)
+const svg = document.getElementById('svg')
+const wires = []
+
+function place(list, x0, y) {
+  let x = x0
+  return list.map((dev) => {
+    const w = dev.modules * MW
+    const b = { ...dev, x, y, w, h: H }
+    x += w + GAP
+    return b
+  })
+}
+const top = (b) => [b.x + b.w / 2, b.y]
+const bot = (b) => [b.x + b.w / 2, b.y + b.h]
+
+const all = devices()
+const r1 = place(all.apartmentRail1, 28, 188)
+const r2 = place(all.apartmentRail2, 760, 188)
+const st = place(all.storage, 28, 430)
+const deye = { x: 760, y: 660, w: 500, h: 96 }
+
+function add(pts, kind, pole, g, via) { wires.push({ pts, kind, pole, g: g ?? 's' + wires.length, via }) }
+function run(from, to, y, kind, pole, g, via) {
+  const yy = y + pole * 8
+  add([from, [from[0], yy], [to[0], yy], to], kind, pole, g, via)
+}
+
+const sftOut = (b, pole) => [b.x + 8 + pole * (b.w - 16), b.y]
+const sftI = (b, pole) => [b.x + 6 + pole * 14, b.y + b.h]
+const sftII = (b, pole) => [b.x + b.w / 2 + 4 + pole * 14, b.y + b.h]
+
+const edge = (b, pole, where) => [b.x + 6 + pole * (b.w - 14), where === 'top' ? b.y : b.y + b.h]
+r1[0].id = 'city'; r1[1].id = 'zA'; r1[3].id = 'pzv'
+r2[0].id = 'q2'; r2[1].id = 'dif2'
+st[0].id = 'qIn'; st[1].id = 'zS'; st[2].id = 'qG'; st[3].id = 'qL'
+st[5].id = 'sock'; st[6].id = 'lamp'
+r1.slice(4).forEach((b, i) => { b.id = 'h' + i })
+r2.slice(2).forEach((b, i) => { b.id = 'sp' + i })
+const viaCity = ['city'], viaZA = ['city', 'zA'], viaQin = ['city', 'qIn']
+const viaZS = ['city', 'qIn', 'zS'], viaQG = ['city', 'qIn', 'zS', 'qG'], viaQL = ['qL']
+const viaQ2 = ['q2'], viaDif = ['q2', 'dif2'], viaPzv = ['pzv']
+for (let pole = 0; pole < 2; pole++) {
+  const inn = edge(r1[0], pole, 'top')
+  add([[6, 164 + pole * 8], [inn[0], 164 + pole * 8], inn], 'grid', pole)
+  const out = edge(r1[0], pole, 'bot')
+  const zin = edge(r1[1], pole, 'top')
+  const yOut = 286 + pole * 8
+  const gx = 96 + pole * 5
+  const yTop = 164 + pole * 8
+  // оба отвода с клеммы выхода ввода — гильза на автомате
+  add([out, [out[0], yOut], [gx, yOut], [gx, yTop], [zin[0], yTop], zin], 'grid', pole, 'city' + pole, viaCity)
+  run(out, edge(st[0], pole, 'top'), 360, 'grid', pole, 'city' + pole, viaCity)
+  run(edge(r1[1], pole, 'bot'), sftI(r1[2], pole), 300, 'grid', pole, undefined, viaZA)
+  const qBot = edge(st[0], pole, 'bot')
+  const zTop = edge(st[1], pole, 'top')
+  const gs = st[0].x + st[0].w + 4 + pole * 5
+  const yq = qBot[1] + 8
+  add([qBot, [qBot[0], yq], [gs, yq], [gs, zTop[1]], zTop], 'grid', pole, 'split' + pole, viaQin)
+  run(qBot, sftI(st[4], pole), 560, 'grid', pole, 'split' + pole, viaQin)
+  const zBot = edge(st[1], pole, 'bot')
+  const gTop = edge(st[2], pole, 'top')
+  const gb = st[1].x + st[1].w + 4 + pole * 5
+  add([zBot, [zBot[0], zBot[1] + 8], [gb, zBot[1] + 8], [gb, gTop[1]], gTop], 'grid', pole, undefined, viaZS)
+  run(sftOut(r1[2], pole), edge(r1[3], pole, 'top'), 150, 'rail1', pole)
+  run(edge(st[3], pole, 'bot'), sftII(st[4], pole), 576, 'load', pole, undefined, viaQL)
+  run(edge(st[2], pole, 'bot'), [deye.x + 80 + pole * 18, deye.y], 620, 'grid', pole, undefined, viaQG)
+  const lTop = edge(st[3], pole, 'top')
+  const gapL = st[2].x + st[2].w + 4 + pole * 4
+  const fromDeye = [deye.x + 230 + pole * 18, deye.y]
+  add([fromDeye, [gapL, fromDeye[1]], [gapL, lTop[1] - 14], [lTop[0], lTop[1] - 14], lTop], 'load', pole)
+  const a = edge(r2[0], pole, 'bot')
+  const b = edge(r2[1], pole, 'top')
+  const g2 = r2[0].x + r2[0].w + 4 + pole * 5
+  add([a, [a[0], a[1] + 8], [g2, a[1] + 8], [g2, b[1]], b], 'rail2', pole, undefined, viaQ2)
+}
+
+for (let pole = 0; pole < 2; pole++) {
+  const ret = 'ret' + pole
+  const sto = 'sto' + pole
+  const gutter = [1564 + pole * 8, 150]
+  run(sftOut(st[4], pole), [gutter[0], 390], 390, 'ret', pole, ret)
+  add([[gutter[0], 390], gutter], 'ret', pole, ret)
+  run(gutter, sftII(r1[2], pole), 330, 'ret', pole, ret)
+  run(gutter, edge(r2[0], pole, 'top'), 150, 'ret', pole, ret)
+  run(sftOut(st[4], pole), top(st[5]), 400, 'sto', pole, sto, ['sock'])
+  run(sftOut(st[4], pole), top(st[6]), 400, 'sto', pole, sto, ['lamp'])
+}
+
+function phaseBus(src, group, y, kind, id, viaBus) {
+  const gapX = src.x + src.w + 6
+  const outL = edge(src, 0, 'bot')
+  const xs = group.map((b) => b.x + b.w / 2)
+  add([outL, [outL[0], outL[1] + 8], [gapX, outL[1] + 8], [gapX, y], [xs.at(-1), y]], kind, 0, id + 'L', viaBus)
+  for (const b of group) add([[b.x + b.w / 2, y], [b.x + b.w / 2, b.y]], kind, 0, id + 'L', [...viaBus, b.id])
+  const ny = group[0].y + group[0].h + 28
+  const outN = edge(src, 1, 'bot')
+  add([outN, [outN[0], ny], [xs.at(-1), ny]], kind, 1, id + 'N', viaBus)
+  for (const b of group) add([bot(b), [bot(b)[0], ny]], kind, 1, id + 'N', [...viaBus, b.id])
+}
+phaseBus(r1[3], r1.slice(4), 158, 'rail1', 'r1', viaPzv)
+phaseBus(r2[1], r2.slice(2), 158, 'rail2', 'r2', viaDif)
+
+add([[6, 840], [6, 850], [deye.x + deye.w - 24, 850], [deye.x + deye.w - 24, deye.y + deye.h]], 'pe', 0)
+applyHops(wires)
+
+function paint(kind, pole, s, via) {
+  if (kind === 'pe') return 'pe'
+  if (!live(via)) return 'dead'
+  const src = { grid: 'grid', load: 'load', rail1: s.rail1, rail2: s.rail2, ret: s.returnPair, sto: s.storageLoads }[kind]
+  if (src === 'grid') return pole ? 'grid-N' : 'grid-L'
+  if (src === 'load') return pole ? 'load-N' : 'load-L'
+  return 'dead'
+}
+
+function posBox(g) {
+  const name = g === 'storage' ? 'Кладовка' : 'Квартира'
+  const btn = (v, t) => `<button data-g="${g}" data-v="${v}">${t}</button>`
+  return `<div xmlns="http://www.w3.org/1999/xhtml" class="pos"><b>Переключатель<br>${name}</b><span>${btn(0, '0')}${btn(1, 'I')}${btn(2, 'II')}</span></div>`
+}
+function lever(b) {
+  if (!b.id || b.part === 'SFT240') return ''
+  const up = on(b.id)
+  const lx = b.x + b.w / 2 - 6
+  const ly = b.y + 28
+  return `<g class="lev" data-sw="${b.id}">
+    <title>${b.name}: ${up ? 'вкл' : 'выкл'}</title>
+    <rect x="${lx}" y="${ly}" width="12" height="34" rx="3" fill="#e8eaee" stroke="#555"/>
+    <rect x="${lx + 2}" y="${up ? ly + 2 : ly + 18}" width="8" height="14" rx="2" fill="${up ? '#2f9b4f' : '#9aa0a6'}"/>
+  </g>`
+}
+function card(b, g) {
+  const label = b.name.length > 22 ? b.name.slice(0, 20) + '…' : b.name
+  const marks = b.part === 'SFT240'
+    ? `<text class="pt" x="${b.x + 3}" y="${b.y + 11}">1</text><text class="pt" x="${b.x + b.w - 10}" y="${b.y + 11}">5</text>
+       <text class="pt" x="${b.x + 2}" y="${b.y + b.h - 4}">I 2/6</text><text class="pt" x="${b.x + b.w / 2}" y="${b.y + b.h - 4}">II 4/8</text>
+       <foreignObject x="${b.x + b.w / 2 - 58}" y="${b.y + 14}" width="116" height="64">${posBox(g)}</foreignObject>`
+    : `<text class="pt" x="${b.x + b.w / 2}" y="${b.y + b.h - 3}" text-anchor="middle">${b.part}</text>`
+  const name = b.part === 'SFT240' ? '' : `<text class="nm" transform="translate(${b.x + b.w / 2 + 3} ${b.y + b.h / 2}) rotate(-90)" text-anchor="middle">${label}</text>`
+  return `<g><title>${b.name}${b.ferrule ? ' · гильза ' + b.ferrule : ''}</title>
+    <rect class="box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="5"/>
+    ${name}
+    ${marks}
+    ${lever(b)}</g>`
+}
+
+const NAME = { grid: 'город', load: 'Load', dead: 'нет' }
+function draw() {
+  const s = gateBreakers(energize(pos.storage, pos.apartment), on, pos.storage, pos.apartment)
+  const paths = [...wires.reduce((map, w) => map.set(w.g, [...(map.get(w.g) ?? []), w]), new Map()).values()].map((parts) =>
+    `<g class="run">${parts.map((w) => {
+      const d = w.d
+      return `<path class="hit" d="${d}"/><path class="w ${paint(w.kind, w.pole, s, w.via)}" d="${d}"/>`
+    }).join('')}</g>`).join('')
+  const bar = (x, y, w, src, text, via) => {
+    const k = src === 'grid' ? 'grid' : src === 'load' ? 'load' : 'dead'
+    return `<rect x="${x}" y="${y}" width="${w}" height="8" rx="2" class="bar ${paint(k, 1, s, via)}"/>
+      <text class="note" x="${x}" y="${y + 22}">${text}</text>`
+  }
+  const bars = bar(28, r1[0].y + H + 36, 680, s.rail1, 'N1 после Диф 63 А, только тяжёлые', viaPzv)
+    + bar(760, r2[0].y + H + 36, 740, s.rail2, 'N2 после дифа рейки 2', viaDif)
+    + bar(28, st[0].y + H + 36, 470, s.storageLoads, 'N3 выход переключателя кладовки. Перемычек между шинами нет.')
+  const labels = `<text class="tag" x="28" y="176">Квартира · рейка 1 · 16 из 18</text>
+    <text class="tag" x="760" y="176">Квартира · рейка 2 · 17 из 18</text>
+    <text class="tag" x="28" y="418">Кладовка · 12 из 18</text>
+    <text class="note" x="200" y="352">5×6 город, потолок 32 А</text>
+    <text class="note" x="900" y="142">5×6 возврат</text>
+    <text class="note" x="28" y="832">Оба переключателя I-0-II одинаковые. Сверху выход 1 и 5. Снизу слева пара I, клеммы 2 и 6: город. Снизу справа пара II, клеммы 4 и 8.</text>
+    <text class="note" x="28" y="848">В квартире пара II — выход переключателя кладовки. Разветвление с клеммы выхода, гильза. Рычаг на автомате — вкл/выкл.</text>`
+  const inv = `<g><rect class="inv" x="${deye.x}" y="${deye.y}" width="${deye.w}" height="${deye.h}" rx="8"/>
+    <text class="tag" x="${deye.x + 14}" y="${deye.y + 24}">Deye SUN-6.6K-OG03LP1</text>
+    <text class="pt" x="${deye.x + 80}" y="${deye.y + 14}">GRID</text>
+    <text class="pt" x="${deye.x + 230}" y="${deye.y + 14}">LOAD</text>
+    <text class="note" x="${deye.x + 14}" y="${deye.y + 52}">GEN пусто. Батарея SE-F16 без DC-автомата 200 А. PE на инвертор с общей шины, не через переключатель.</text></g>`
+  const group = (b) => (st.includes(b) ? 'storage' : 'apartment')
+  svg.innerHTML = paths + bars + [...r1, ...r2, ...st].map((b) => card(b, group(b))).join('') + inv + labels
+  document.getElementById('status').textContent =
+    `рейка 1: ${NAME[s.rail1]} · рейка 2: ${NAME[s.rail2]} · кладовка: ${NAME[s.storageLoads]} · возврат: ${NAME[s.returnPair]}`
+  document.querySelectorAll('button').forEach((b) => b.classList.toggle('on', pos[b.dataset.g] === Number(b.dataset.v)))
+}
+
+document.addEventListener('click', (e) => {
+  const lev = e.target.closest('[data-sw]')
+  if (lev) {
+    sw[lev.dataset.sw] = !on(lev.dataset.sw)
+    draw()
+    return
+  }
+  const b = e.target.closest('button[data-g]')
+  if (!b) return
+  pos[b.dataset.g] = Number(b.dataset.v)
+  draw()
+})
+svg.addEventListener('mouseover', (e) => {
+  const g = e.target.closest('.run')
+  if (!g || g === g.parentNode.lastElementChild) return
+  g.parentNode.appendChild(g)
+})
+selfCheck()
+document.getElementById('badge').textContent = 'схема сходится'
+draw()
+</script>
+</body>
+</html>

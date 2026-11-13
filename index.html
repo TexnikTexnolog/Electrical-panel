@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Щиты: квартира и кладовка</title>
+<style>
+  :root {
+    --grid-l: #8b5a2b; --grid-n: #1f5fbf;
+    --load-l: #f08a00; --load-n: #5bc0eb;
+    --dead: #9aa0a6; --mod: 56px;
+  }
+  body { font: 14px/1.3 system-ui, sans-serif; margin: 0; background: #f4f4f2; color: #222; }
+  .page { padding: 16px; }
+  header.site button { font: inherit; padding: 3px 10px; border: 1px solid #888; background: #fff; cursor: pointer; }
+  header.site button.on { background: #222; color: #fff; }
+  .swatches i { display: inline-block; width: 16px; height: 8px; margin: 0 3px 0 8px; vertical-align: middle; }
+  h2 { font-size: 16px; margin: 0 0 8px; }
+  .board, .cable, .deye { background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 10px 12px; margin: 12px 0; }
+  .sw { display: inline-block; width: 22px; height: 12px; border-radius: 2px; vertical-align: middle; margin-right: 4px; }
+  .grid-L { background: var(--grid-l); } .grid-N { background: var(--grid-n); }
+  .load-L { background: var(--load-l); } .load-N { background: var(--load-n); }
+  .dead-L, .dead-N { background: var(--dead); }
+  .pe { background: repeating-linear-gradient(90deg, #f2d600 0 8px, #2e9b3a 8px 16px); }
+  .rail { display: flex; position: relative; width: calc(var(--mod) * 18); margin-bottom: 24px;
+          border-bottom: 6px solid #888; padding-bottom: 2px; }
+  .rail.s12 { width: calc(var(--mod) * 12); }
+.pair, .scroll { display: flex; gap: 28px; align-items: flex-start; overflow-x: auto; }
+  .scroll { display: block; padding-bottom: 8px; }
+  .dev { box-sizing: border-box; width: calc(var(--mod) * var(--m)); border: 1px solid #555; border-bottom: 0;
+         background: #eceff1; display: flex; flex-direction: column; min-height: 210px; position: relative; flex: none; }
+  .t { display: flex; height: 22px; }
+  .t span { flex: 1; text-align: center; font-weight: 700; color: #fff; line-height: 22px; font-size: 12px; }
+  .name { writing-mode: vertical-rl; transform: rotate(180deg); flex: 1; align-self: center;
+          font-size: 12px; padding: 4px 0; text-align: left; }
+  .part { font-size: 10px; text-align: center; border-top: 1px solid #aaa; padding: 2px 0; }
+  .ferrule { font-size: 10px; background: #fff3b0; text-align: center; padding: 2px 1px; border-top: 1px solid #aaa; }
+  .role { font-size: 11px; font-weight: 700; background: #ffd9a0; text-align: center; padding: 2px 0; }
+  .nbar { height: 16px; margin: -16px 0 8px; color: #fff; font-size: 11px; font-weight: 700; line-height: 16px; padding-left: 4px; box-sizing: border-box; }
+  .peBar { height: 8px; width: calc(var(--mod) * 18); margin-bottom: 8px; }
+  .row { display: flex; gap: 8px; align-items: center; margin: 3px 0; }
+  .row .sw { width: 80px; height: 14px; }
+  .empty { border: 2px dashed #888; color: #666; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+  .warn { color: #a40000; font-weight: 700; }
+  .badge { padding: 2px 8px; border-radius: 4px; font-weight: 700; }
+  .badge.ok { background: #d7f2d7; color: #145214; } .badge.bad { background: #ffd9d9; color: #a40000; }
+  .dev { cursor: pointer; }
+  #terms { min-height: 1.3em; }
+</style>
+</head>
+<body>
+<link rel="stylesheet" href="scheme/nav.css">
+<header class="site">
+  <nav id="views"></nav>
+  <script src="scheme/nav.js"></script>
+  <span>Переключатель Кладовка
+    <button data-g="storage" data-v="0">0</button><button data-g="storage" data-v="1">I</button><button data-g="storage" data-v="2">II</button>
+  </span>
+  <span>Переключатель Квартира
+    <button data-g="apartment" data-v="0">0</button><button data-g="apartment" data-v="1">I</button><button data-g="apartment" data-v="2">II</button>
+  </span>
+  <span id="badge" class="badge"></span>
+  <span id="status"></span>
+  <span class="swatches">
+    <i style="background:#8b5a2b"></i>L город
+    <i style="background:#1f5fbf"></i>N город
+    <i style="background:#f08a00"></i>L Load
+    <i style="background:#5bc0eb"></i>N Load
+    <i style="background:#b7bcc4"></i>нет
+    <i style="background:repeating-linear-gradient(90deg,#f2d600 0 4px,#2e9b3a 4px 8px)"></i>PE
+  </span>
+</header>
+<div class="page">
+<div>Нулевые шины N1, N2, N3 разные: перемычки между ними нет. PE одна, не переключается.</div>
+<div id="terms" class="board">Клик по аппарату — покажет его клеммы.</div>
+
+<div class="board">
+  <div class="pair">
+    <div>
+      <h2>Щит квартиры — рейка 1 (16 из 18 мест)</h2>
+      <div class="rail" id="rail1"></div><div class="nbar" id="n1"></div><div class="peBar pe"></div>
+    </div>
+    <div>
+      <h2>Щит квартиры — рейка 2 (17 из 18 мест)</h2>
+      <div class="rail" id="rail2"></div><div class="nbar" id="n2"></div>
+    </div>
+  </div>
+</div>
+
+<div class="cable">
+  <h2>Кабель 5×6 между щитами — пять жил, потолок 32 А</h2>
+  <div class="row"><i class="sw" data-w="grid-L"></i>жила 1: город L</div>
+  <div class="row"><i class="sw" data-w="grid-N"></i>жила 2: город N</div>
+  <div class="row"><i class="sw" data-w="rtn-L"></i>жила 3: возврат L</div>
+  <div class="row"><i class="sw" data-w="rtn-N"></i>жила 4: возврат N</div>
+  <div class="row"><i class="sw pe"></i>жила 5: PE</div>
+  <div class="warn">Потолок линии 32 А: по жилам 6 мм² нельзя ставить больше 32 А.</div>
+</div>
+
+<div class="board">
+  <h2>Щит кладовки (12 модулей)</h2>
+  <div class="scroll"><div class="rail s12" id="storage"></div><div class="nbar" id="n3"></div><div class="peBar pe" style="width:calc(var(--mod)*12)"></div></div>
+</div>
+
+<div class="deye">
+  <h2>Deye</h2>
+  <div class="row"><i class="sw" data-w="grid-L"></i><i class="sw" data-w="grid-N"></i>порт Grid ← автомат «На порт Grid Deye»</div>
+  <div class="row"><i class="sw load-L"></i><i class="sw load-N"></i>порт Load → автомат «С порта Load Deye»</div>
+  <div class="row"><span class="empty">порт GEN: пусто, ничего не подключено</span></div>
+  <div class="row"><span class="warn">Батарея: DC-автомат 200 А не куплен.</span></div>
+</div>
+
+<script type="module">
+import { devices, energize, selfCheck } from './scheme/circuit.js'
+
+const d = devices()
+const NAME = { grid: 'город', load: 'Load Deye', dead: 'нет напряжения' }
+const pos = { storage: 1, apartment: 1 } // начальное положение: кладовка I, квартира I
+
+const cls = (st, pole) => `${st}-${pole}`
+function esc(t) { return t.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]) }
+function posBox(g) {
+  const name = g === 'storage' ? 'Кладовка' : 'Квартира'
+  const btn = (v, t) => `<button data-g="${g}" data-v="${v}">${t}</button>`
+  return `<div class="pos"><b>Переключатель<br>${name}</b><span>${btn(0, '0')}${btn(1, 'I')}${btn(2, 'II')}</span></div>`
+}
+
+// клеммы по клику: SFT240 и ZUBR из брифа, остальные вход сверху / выход снизу
+function terminals(x) {
+  if (x.part === 'SFT240') return 'I: фаза 2, ноль 6 · II: фаза 4, ноль 8 · верх: фаза 1, ноль 5'
+  if (x.part === 'ZUBR') return 'вход сверху: 1 фаза, 2 ноль · выход снизу: 3 фаза, 4 ноль'
+  if (x.modules === 2) return 'вход сверху: L и N отдельно · выход снизу: L и N отдельно'
+  return 'вход сверху, выход снизу'
+}
+
+function render() {
+  const s = energize(pos.storage, pos.apartment)
+  // состояние провода для каждого аппарата: grid | load | dead
+  const stateOf = {
+    apartmentRail1: (i) => (i < 3 ? 'grid' : s.rail1), // до переключателя вход всегда город
+    apartmentRail2: () => s.rail2,
+    storage: (i) => ['grid', 'grid', s.deyeGrid, 'load', s.storageLoads, s.storageLoads, s.storageLoads][i],
+  }
+  const cable = { 'grid-L': 'grid-L', 'grid-N': 'grid-N',
+                  'rtn-L': cls(s.returnPair, 'L'), 'rtn-N': cls(s.returnPair, 'N') }
+  document.querySelectorAll('[data-w]').forEach((el) => { el.className = `sw ${cable[el.dataset.w]}` })
+
+  for (const [key, id] of [['apartmentRail1', 'rail1'], ['apartmentRail2', 'rail2'], ['storage', 'storage']]) {
+    document.getElementById(id).innerHTML = d[key].map((x, i) => {
+      const st = stateOf[key](i)
+      return `<div class="dev" data-k="${key}" data-i="${i}" style="--m:${x.modules}" title="${esc(x.name)}">
+        <div class="t"><span class="${cls(st, 'L')}">L</span><span class="${cls(st, 'N')}">N</span></div>
+        ${x.role ? `<div class="role">${esc(x.role)}</div>` : ''}
+        <div class="name">${esc(x.name)}</div>
+        ${x.part === 'SFT240' ? posBox(key === 'storage' ? 'storage' : 'apartment') : ''}
+        ${x.ferrule ? `<div class="ferrule">гильза: ${esc(x.ferrule)}</div>` : ''}
+        <div class="part">${esc(x.part)}</div></div>`
+    }).join('')
+  }
+
+  // шина N начинается после CDA263D / ADA982D / SFT240 (storage) и идёт до конца рейки
+  for (const [id, key, last, width, src] of [['n1', 'apartmentRail1', 3, 16, s.rail1], ['n2', 'apartmentRail2', 1, 16, s.rail2], ['n3', 'storage', 4, 12, s.storageLoads]]) {
+    const off = d[key].slice(0, last + 1).reduce((a, x) => a + x.modules, 0)
+    const el = document.getElementById(id)
+    el.className = `nbar ${cls(src, 'N')}`
+    el.style.marginLeft = `calc(var(--mod) * ${off})`
+    el.style.width = `calc(var(--mod) * ${width - off})`
+    el.textContent = id.toUpperCase()
+  }
+
+  document.getElementById('status').innerHTML =
+    `рейка 1: <b>${NAME[s.rail1]}</b> · рейка 2: <b>${NAME[s.rail2]}</b> · кладовка: <b>${NAME[s.storageLoads]}</b> · возврат: <b>${NAME[s.returnPair]}</b>` +
+    (s.fault ? ` · <span class="warn">короткое между городом и Load: ${esc(s.fault)}</span>` : '')
+  document.querySelectorAll('[data-g]').forEach((b) =>
+    b.classList.toggle('on', pos[b.dataset.g] === Number(b.dataset.v)))
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-g]')
+  if (b) {
+    pos[b.dataset.g] = Number(b.dataset.v)
+    render()
+    return
+  }
+  const el = e.target.closest('.dev')
+  if (!el) return
+  const x = d[el.dataset.k][el.dataset.i]
+  document.getElementById('terms').innerHTML = `<b>${esc(x.name)}</b> (${esc(x.part)}): ${esc(terminals(x))}`
+})
+
+const badge = document.getElementById('badge')
+try {
+  selfCheck()
+  badge.textContent = 'схема сходится'
+  badge.className = 'badge ok'
+} catch (err) {
+  badge.textContent = err.message
+  badge.className = 'badge bad'
+}
+
+render()
+</script>
+</div>
+</body>
+</html>
