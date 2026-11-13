@@ -169,11 +169,18 @@ for (let pole = 0; pole < 2; pole++) {
     run(bot(tb), bot(st[5]), 540, 'sto', 1, sto, ['sock'])
     run(bot(tb), bot(st[6]), 548, 'sto', 1, sto, ['lamp'])
   }
+  // один провод до входа рейки 2
   add([left, [left[0], 150 + pole * 8], [q2in[0], 150 + pole * 8], q2in], 'ret', pole, ret)
-  // разветление на входе рейки 2: вверх в переключатель квартиры
-  const gutter = [1564 + pole * 8, 150]
-  add([q2in, [q2in[0], 150 + pole * 8], gutter], 'ret', pole, ret)
-  run(gutter, sftII(r1[2], pole), 330, 'ret', pole, ret)
+  // на входе MC232A: короткий выход → Y, новый провод на переключатель квартиры
+  const qTee = [q2in[0], q2in[1] - 10]
+  const qLeft = [q2in[0] - 18, q2in[1] - 24]
+  const qRight = [q2in[0] + 18, q2in[1] - 24]
+  add([q2in, qTee], 'ret', pole, ret)
+  add([qTee, qLeft], 'ret', pole, ret)
+  add([qTee, qRight], 'ret', pole, ret)
+  const aptII = sftII(r1[2], pole)
+  const gutter = [1564 + pole * 8, qRight[1]]
+  add([qRight, gutter, [gutter[0], 150], [aptII[0], 150], aptII], 'ret', pole, ret + 'apt')
 }
 
 function phaseBus(src, group, y, kind, id, viaBus) {
