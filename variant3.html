@@ -204,21 +204,21 @@ for (let pole = 0; pole < 2; pole++) {
   const o = sS.p['o' + k]
   const q2in = q2.p['in' + k]
   // короткий выход вверх → Y влево/вправо: колодка / рейка 2
-  const tee = { x: o.x, y: o.y - 12 }
-  const left = { x: o.x - 22, y: o.y - 28 }
-  const right = { x: o.x + 22, y: o.y - 28 }
-  add([o, tee], 'ret', pole, ret)
-  add([tee, left], 'ret', pole, ret)
-  add([tee, right], 'sto', pole, 'tbFork' + pole)
+  const oTee = { x: o.x, y: o.y - 12 }
+  const oLeft = { x: o.x - 22, y: o.y - 28 }
+  const oRight = { x: o.x + 22, y: o.y - 28 }
+  add([o, oTee], 'ret', pole, ret)
+  add([oTee, oLeft], 'ret', pole, ret)
+  add([oTee, oRight], 'sto', pole, 'tbFork' + pole)
   if (pole === 0) {
-    add([right, { x: right.x, y: 414 }, { x: tb.p.L.x, y: 414 }, tb.p.L], 'sto', 0, 'tbL')
+    add([oRight, { x: oRight.x, y: 414 }, { x: tb.p.L.x, y: 414 }, tb.p.L], 'sto', 0, 'tbL')
     go(tb.p.L, sock.p.L, 400, 'sto', 0, 'sockL', ['sock'])
     go(tb.p.L, lamp.p.L, 388, 'sto', 0, 'lampL', ['lamp'])
   } else {
-    add([right, { x: tb.p.N.x, y: right.y }, { x: tb.p.N.x, y: tb.p.N.y }, tb.p.N], 'sto', 1, 'tbN')
+    add([oRight, { x: tb.p.N.x, y: oRight.y }, { x: tb.p.N.x, y: tb.p.N.y }, tb.p.N], 'sto', 1, 'tbN')
   }
   const yQ2 = 268 + pole * 11
-  add([left, { x: left.x, y: yQ2 }, { x: q2in.x, y: yQ2 }, q2in], 'ret', pole, ret)
+  add([oLeft, { x: oLeft.x, y: yQ2 }, { x: q2in.x, y: yQ2 }, q2in], 'ret', pole, ret)
   // разветление на входе рейки 2: в автомат и вверх в переключатель квартиры
   const retG = { x: R + 24 + pole * 12, y: yQ2 }
   const retTop = { x: retG.x, y: 198 + pole * 11 }
