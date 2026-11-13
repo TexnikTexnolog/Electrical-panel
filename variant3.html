@@ -222,19 +222,21 @@ for (let pole = 0; pole < 2; pole++) {
   } else {
     add([oRight, { x: tb.p.N.x, y: oRight.y }, { x: tb.p.N.x, y: tb.p.N.y }, tb.p.N], 'sto', 1, outG)
   }
-  const yQ2 = r2Y - 20 + pole * PS
-  add([oLeft, { x: oLeft.x, y: yQ2 }, { x: q2in.x, y: yQ2 }, q2in], 'ret', pole, outG)
-  // Y на входе рейки 2 — та же группа, плюс новый провод в квартиру
-  const qTee = { x: q2in.x, y: q2in.y - 16 }
-  const qLeft = { x: q2in.x - 32, y: q2in.y - 36 }
-  const qRight = { x: q2in.x + 32, y: q2in.y - 36 }
+  // подвод в клемму слева по уровню терминала — не пересекает Y
+  const land = { x: q2in.x - 44, y: q2in.y }
+  const yQ2 = r2Y - 24 + pole * PS
+  add([oLeft, { x: oLeft.x, y: yQ2 }, { x: land.x, y: yQ2 }, land, q2in], 'ret', pole, outG)
+  // Y строго вверх с клеммы: короткий ствол → влево/вправо, вправо — в квартиру
+  const qTee = { x: q2in.x, y: q2in.y - 20 }
+  const qArmL = { x: q2in.x - 36, y: q2in.y - 44 }
+  const qArmR = { x: q2in.x + 36, y: q2in.y - 44 }
   add([q2in, qTee], 'ret', pole, outG)
-  add([qTee, qLeft], 'ret', pole, outG)
-  add([qTee, qRight], 'ret', pole, outG)
-  const retG = { x: R + 28 + pole * 20, y: qRight.y }
+  add([qTee, qArmL], 'ret', pole, outG)
+  add([qTee, qArmR], 'ret', pole, outG)
+  const retG = { x: R + 28 + pole * 20, y: qArmR.y }
   const retTop = { x: retG.x, y: 198 + pole * PS }
   const aptII = sA.p['ii' + k]
-  add([qRight, retG, retTop, { x: aptII.x, y: retTop.y }, aptII], 'ret', pole, outG)
+  add([qArmR, { x: retG.x, y: qArmR.y }, retG, retTop, { x: aptII.x, y: retTop.y }, aptII], 'ret', pole, outG)
   const q2o = q2.p['out' + k]
   const dIn = dif2.p['in' + k]
   const rise = pole ? dif2.x + dif2.w + 8 : q2.x + q2.w + 8
