@@ -1,7 +1,7 @@
 const pages = [
   ['index.html', 'Рейки'],
-  ['wires.html', 'Схема проводов'],
-  ['variant3.html', 'Вариант 3'],
+  ['wires-1.html', 'Схема проводов - 1'],
+  ['wires-2.html', 'Схема проводов - 2'],
 ]
 const file = location.pathname.split('/').pop() || 'index.html'
 document.getElementById('views').replaceChildren(...pages.map(([href, name]) => {
