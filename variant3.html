@@ -148,7 +148,6 @@ const bat = { x: 740, y: 880, w: 230, h: 120 }
 const gL = { x: qG.p.outL.x, y: deye.y }, gN = { x: qG.p.outN.x, y: deye.y }
 const lL = { x: 318, y: deye.y }, lN = { x: 330, y: deye.y }
 const peD = { x: 660, y: deye.y + deye.h }
-const R = 1588
 
 const viaCity = ['city']
 const viaZA = ['city', 'zA']
@@ -177,13 +176,11 @@ for (let pole = 0; pole < 2; pole++) {
   add([tee, left], 'grid', pole, cityRun, viaCity)
   add([tee, right], 'grid', pole, cityRun, viaCity)
   add([right, { x: gap, y: right.y }, { x: gap, y: yTop }, { x: zin.x, y: yTop }, zin], 'grid', pole, cityRun, viaCity)
-  const yCable = 230 + pole * PS
-  const cityG = { x: R + pole * 20, y: yCable }
-  add([left, { x: left.x, y: yCable }, cityG], 'grid', pole, cityRun, viaCity)
-  const yIn = sY - 40 + pole * PS
-  const cityIn = { x: R + pole * 20, y: yIn }
-  add([cityG, cityIn], 'grid', pole, cityRun, viaCity)
-  go(cityIn, qIn.p['in' + k], sY - 40, 'grid', pole, cityRun, viaCity)
+  // 5×6: город вниз слева рядом с возвратом (не правый желоб, не сквозь карты)
+  const cableX = 2 + pole * 6
+  const ySto = sY - 40 + pole * PS
+  const qInPort = qIn.p['in' + k]
+  add([left, { x: cableX, y: left.y }, { x: cableX, y: ySto }, { x: qInPort.x, y: ySto }, qInPort], 'grid', pole, cityRun, viaCity)
   go(zA.p['out' + k], sA.p['i' + k], 188, 'grid', pole, undefined, viaZA)
   const split = 'split' + pole
   const qOut = qIn.p['out' + k]
@@ -208,33 +205,38 @@ for (let pole = 0; pole < 2; pole++) {
   const outG = 'sftOut' + pole
   const o = sS.p['o' + k]
   const q2in = q2.p['in' + k]
-  // Y на выходе переключателя: stub+оба луча+обе трассы в одной группе
-  const oTee = { x: o.x, y: o.y - 16 }
-  const oLeft = { x: o.x - 32, y: o.y - 36 }
-  const oRight = { x: o.x + 32, y: o.y - 36 }
+  // Y на выходе переключателя: L/N с зазором 2×PS, чтобы не налипали
+  const gapLN = 2 * PS
+  const oTee = { x: o.x, y: o.y - 14 - pole * 10 }
+  const oLeft = { x: o.x - 36, y: o.y - 40 - pole * gapLN }
+  const oRight = { x: o.x + 36, y: o.y - 40 - pole * gapLN }
   add([o, oTee], 'ret', pole, outG)
   add([oTee, oLeft], 'ret', pole, outG)
   add([oTee, oRight], 'sto', pole, outG)
-  // правый луч → клеммы внизу щита → автоматы на рейке
+  // правый луч: фаза → Y на входе розетки (правый луч Y → свет); ноль → N3
   if (pole === 0) {
-    add([oRight, { x: oRight.x, y: klemm.y - 20 }, { x: klemm.p.L.x, y: klemm.y - 20 }, klemm.p.L], 'sto', 0, outG)
-    go(klemm.p.L, sock.p.L, sY - 28, 'sto', 0, 'sockL', ['sock'])
-    go(klemm.p.L, lamp.p.L, sY - 48, 'sto', 0, 'lampL', ['lamp'])
+    const sIn = sock.p.L
+    const sTee = { x: sIn.x, y: sIn.y - 16 }
+    const sArmL = { x: sIn.x - 32, y: sIn.y - 36 }
+    const sArmR = { x: sIn.x + 32, y: sIn.y - 36 }
+    add([oRight, { x: oRight.x, y: sArmL.y }, sArmL], 'sto', 0, outG)
+    add([sIn, sTee], 'sto', 0, 'sockL', ['sock'])
+    add([sTee, sArmL], 'sto', 0, outG)
+    add([sTee, sArmR], 'sto', 0, outG)
+    add([sArmR, { x: lamp.p.L.x, y: sArmR.y }, lamp.p.L], 'sto', 0, 'lampL', ['lamp'])
   } else {
-    add([oRight, { x: oRight.x, y: klemm.y - 20 - PS }, { x: klemm.p.N.x, y: klemm.y - 20 - PS }, klemm.p.N], 'sto', 1, outG)
+    add([oRight, { x: oRight.x, y: klemm.y - 20 - gapLN }, { x: klemm.p.N.x, y: klemm.y - 20 - gapLN }, klemm.p.N], 'sto', 1, outG)
   }
-  // подвод в клемму слева по уровню терминала — не пересекает Y
-  const land = { x: q2in.x - 44, y: q2in.y }
-  const yQ2 = r2Y - 24 + pole * PS
-  add([oLeft, { x: oLeft.x, y: yQ2 }, { x: land.x, y: yQ2 }, land, q2in], 'ret', pole, outG)
-  // Y строго вверх с клеммы: короткий ствол → влево/вправо, вправо — в квартиру
+  // 5×6 возврат: горизонталь и стояк с тем же зазором → левый луч Y
+  const retX = 2 + pole * gapLN
   const qTee = { x: q2in.x, y: q2in.y - 20 }
-  const qArmL = { x: q2in.x - 36, y: q2in.y - 44 }
-  const qArmR = { x: q2in.x + 36, y: q2in.y - 44 }
+  const qArmL = { x: q2in.x - 36, y: q2in.y - 44 - pole * 8 }
+  const qArmR = { x: q2in.x + 36, y: q2in.y - 44 - pole * 8 }
+  add([oLeft, { x: retX, y: oLeft.y }, { x: retX, y: qArmL.y }, qArmL], 'ret', pole, outG)
+  // Y: слева из кладовки, справа на пару II переключателя
   add([q2in, qTee], 'ret', pole, outG)
   add([qTee, qArmL], 'ret', pole, outG)
   add([qTee, qArmR], 'ret', pole, outG)
-  // рейки рядом — короткий ход вверх к паре II квартирного переключателя
   const aptII = sA.p['ii' + k]
   const midY = qArmR.y - 40 - pole * PS
   add([qArmR, { x: qArmR.x + 24, y: midY }, { x: aptII.x, y: midY }, aptII], 'ret', pole, outG)
@@ -261,6 +263,8 @@ const gapD = dif2.x + dif2.w + 18
 add([dif2.p.outL, { x: dif2.p.outL.x, y: dif2.p.outL.y + 8 }, { x: gapD, y: dif2.p.outL.y + 8 }, { x: gapD, y: bus2 }, { x: spareBoxes.at(-1).p.L.x, y: bus2 }], 'rail2', 0, 'r2L', viaDif)
 for (const b of spareBoxes) add([{ x: b.p.L.x, y: bus2 }, b.p.L], 'rail2', 0, 'r2L', [...viaDif, b.id])
 const n2 = r2Y + R2H + 40
+const n2x = spareBoxes[0].x
+const n2w = spareBoxes.at(-1).x + spareBoxes.at(-1).w - n2x
 add([dif2.p.outN, { x: dif2.p.outN.x, y: n2 }, { x: spareBoxes.at(-1).p.N.x, y: n2 }], 'rail2', 1, 'r2N', viaDif)
 for (const b of spareBoxes) add([b.p.N, { x: b.p.N.x, y: n2 }], 'rail2', 1, 'r2N', [...viaDif, b.id])
 const n3 = klemm.y + klemm.h + 24
@@ -331,10 +335,10 @@ function draw() {
     }).join('')}</g>`).join('')
   const bars = `    <rect class="barN ${paint(s.rail1 === 'grid' ? 'grid' : s.rail1 === 'load' ? 'load' : 'dead', 1, s, viaPzv)}" x="560" y="${n1}" width="900" height="8" rx="2"/>
     <text class="n" x="560" y="${n1 + 20}">N1 · ноль тяжёлых, после Диф 63 А. С N2 и N3 не соединять</text>
-    <rect class="barN ${paint(s.rail2 === 'grid' ? 'grid' : s.rail2 === 'load' ? 'load' : 'dead', 1, s, viaDif)}" x="16" y="${n2}" width="1520" height="8" rx="2"/>
-    <text class="n" x="16" y="${n2 + 18}">N2 · ноль рейки 2, после дифа 32 А</text>
+    <rect class="barN ${paint(s.rail2 === 'grid' ? 'grid' : s.rail2 === 'load' ? 'load' : 'dead', 1, s, viaDif)}" x="${n2x}" y="${n2}" width="${n2w}" height="8" rx="2"/>
+    <text class="n" x="${n2x}" y="${n2 + 18}">N2 · ноль рейки 2, после дифа 32 А</text>
     <rect class="barN ${paint(s.storageLoads === 'grid' ? 'grid' : s.storageLoads === 'load' ? 'load' : 'dead', 1, s)}" x="668" y="${n3}" width="160" height="8" rx="2"/>
-    <text class="n" x="668" y="${n3 - 8}">N3 кладовка · с клемм низа щита</text>
+    <text class="n" x="668" y="${n3 - 8}">N3 кладовка · ноль; фаза — Y на розетке</text>
     <rect class="pebar" x="16" y="${peY}" width="1560" height="8"/>
     <text class="n" x="16" y="${peY - 6}">PE общий, на переключатели не заходит</text>`
   const frames = `<rect class="panel" x="8" y="8" width="1360" height="${Y + H + 40}" rx="10"/>
@@ -350,8 +354,8 @@ function draw() {
     <text class="s" x="1002" y="${deye.y + 74}">Низ справа пара II: 4 и 8. В квартире II — возврат из кладовки.</text>
     <text class="s" x="1002" y="${deye.y + 90}">Автоматы и ЗУБР: вход сверху, выход снизу. ЗУБР сверху 1 и 2, снизу 3 и 4. Переключатель — исключение: выход сверху, два входа снизу.</text>
     <text class="s" x="1002" y="${deye.y + 106}">Город в квартирный переключатель заходит после ЗУБР.</text>
-    <text class="s" x="1002" y="${deye.y + 128}">Выход переключателя кладовки: гильза → клеммы низа щита (розетка/свет) и → вход рейки 2.</text>
-    <text class="s" x="1002" y="${deye.y + 144}">Возврат доходит до ввода рейки 2; там Y — новый провод на пару II квартирного переключателя.</text>
+    <text class="s" x="1002" y="${deye.y + 128}">Выход кладовки: фаза → Y на входе розетки (правый луч → свет); ноль → N3; возврат → рейка 2.</text>
+    <text class="s" x="1002" y="${deye.y + 144}">5×6 слева: город вниз + возврат вверх. У ввода рейки 2 Y: слева из кладовки, справа на II.</text>
     <text class="s" x="1002" y="${deye.y + 160}">N1, N2 и N3 между собой не соединять.</text>
     <text class="s" x="1002" y="${deye.y + 176}">Потолок четырёх рабочих жил — 32 А. DC-автомата 200 А на АКБ нет.</text>
     <text class="s" x="1002" y="${deye.y + 192}">GEN не используется.</text>`

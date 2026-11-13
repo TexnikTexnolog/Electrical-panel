@@ -152,14 +152,15 @@ for (let pole = 0; pole < 2; pole++) {
   const o = sftOut(st[4], pole)
   const q2in = edge(r2[0], pole, 'top')
   const kPort = [klemm.x + (pole ? klemm.w - 10 : 10), klemm.y]
-  // короткий выход вверх → Y: клеммы низа щита / рейка 2
-  const tee = [o[0], o[1] - 10]
-  const left = [o[0] - 18, o[1] - 24]
-  const right = [o[0] + 18, o[1] - 24]
+  // короткий выход вверх → Y: L/N с зазором 16
+  const gap = 16
+  const tee = [o[0], o[1] - 10 - pole * 8]
+  const left = [o[0] - 18, o[1] - 28 - pole * gap]
+  const right = [o[0] + 18, o[1] - 28 - pole * gap]
   add([o, tee], 'ret', pole, ret)
   add([tee, left], 'ret', pole, ret)
   add([tee, right], 'sto', pole, sto + 'k')
-  add([right, [right[0], klemm.y - 12], [kPort[0], klemm.y - 12], kPort], 'sto', pole, sto + 'k')
+  add([right, [right[0], klemm.y - 12 - pole * gap], [kPort[0], klemm.y - 12 - pole * gap], kPort], 'sto', pole, sto + 'k')
   if (pole === 0) {
     run(kPort, top(st[5]), 400, 'sto', 0, sto, ['sock'])
     run(kPort, top(st[6]), 388, 'sto', 0, sto, ['lamp'])
@@ -167,12 +168,13 @@ for (let pole = 0; pole < 2; pole++) {
     run(kPort, bot(st[5]), 540, 'sto', 1, sto, ['sock'])
     run(kPort, bot(st[6]), 548, 'sto', 1, sto, ['lamp'])
   }
-  // один провод до входа рейки 2
-  add([left, [left[0], 150 + pole * 8], [q2in[0], 150 + pole * 8], q2in], 'ret', pole, ret)
-  // на входе MC232A: короткий выход → Y, новый провод на переключатель квартиры
+  // 5×6 возврат: стояк с тем же зазором → левый луч Y
+  const retX = 4 + pole * gap
   const qTee = [q2in[0], q2in[1] - 10]
-  const qLeft = [q2in[0] - 18, q2in[1] - 24]
-  const qRight = [q2in[0] + 18, q2in[1] - 24]
+  const qLeft = [q2in[0] - 18, q2in[1] - 24 - pole * 8]
+  const qRight = [q2in[0] + 18, q2in[1] - 24 - pole * 8]
+  add([left, [retX, left[1]], [retX, qLeft[1]], qLeft], 'ret', pole, ret)
+  // Y: слева из кладовки, справа на пару II переключателя
   add([q2in, qTee], 'ret', pole, ret)
   add([qTee, qLeft], 'ret', pole, ret)
   add([qTee, qRight], 'ret', pole, ret)
