@@ -97,10 +97,8 @@ const edge = (b, pole, where) => [b.x + 6 + pole * (b.w - 14), where === 'top' ?
 r1[0].id = 'city'; r1[1].id = 'zA'; r1[3].id = 'pzv'
 r2[0].id = 'q2'; r2[1].id = 'dif2'
 st[0].id = 'qIn'; st[1].id = 'zS'; st[2].id = 'qG'; st[3].id = 'qL'
-const tb = { name: 'Колодка', part: 'клеммы', x: st[5].x, y: st[5].y, w: 28, h: H }
-st[5].x += 40
-st[6].x += 40
 st[5].id = 'sock'; st[6].id = 'lamp'
+const klemm = { name: 'Клеммы', part: 'низ щита', x: st[5].x, y: st[5].y + H + 36, w: st[6].x + st[6].w - st[5].x, h: 28 }
 r1.slice(4).forEach((b, i) => { b.id = 'h' + i })
 r2.slice(2).forEach((b, i) => { b.id = 'sp' + i })
 const viaCity = ['city'], viaZA = ['city', 'zA'], viaQin = ['city', 'qIn']
@@ -153,21 +151,21 @@ for (let pole = 0; pole < 2; pole++) {
   const sto = 'sto' + pole
   const o = sftOut(st[4], pole)
   const q2in = edge(r2[0], pole, 'top')
-  const tbPort = pole ? bot(tb) : top(tb)
-  // короткий выход вверх → Y влево/вправо: колодка / рейка 2
+  const kPort = [klemm.x + (pole ? klemm.w - 10 : 10), klemm.y]
+  // короткий выход вверх → Y: клеммы низа щита / рейка 2
   const tee = [o[0], o[1] - 10]
   const left = [o[0] - 18, o[1] - 24]
   const right = [o[0] + 18, o[1] - 24]
   add([o, tee], 'ret', pole, ret)
   add([tee, left], 'ret', pole, ret)
-  add([tee, right], 'sto', pole, sto + 'tb')
-  add([right, [right[0], pole ? 520 : 400], [tbPort[0], pole ? 520 : 400], tbPort], 'sto', pole, sto + 'tb')
+  add([tee, right], 'sto', pole, sto + 'k')
+  add([right, [right[0], klemm.y - 12], [kPort[0], klemm.y - 12], kPort], 'sto', pole, sto + 'k')
   if (pole === 0) {
-    run(top(tb), top(st[5]), 388, 'sto', 0, sto, ['sock'])
-    run(top(tb), top(st[6]), 376, 'sto', 0, sto, ['lamp'])
+    run(kPort, top(st[5]), 400, 'sto', 0, sto, ['sock'])
+    run(kPort, top(st[6]), 388, 'sto', 0, sto, ['lamp'])
   } else {
-    run(bot(tb), bot(st[5]), 540, 'sto', 1, sto, ['sock'])
-    run(bot(tb), bot(st[6]), 548, 'sto', 1, sto, ['lamp'])
+    run(kPort, bot(st[5]), 540, 'sto', 1, sto, ['sock'])
+    run(kPort, bot(st[6]), 548, 'sto', 1, sto, ['lamp'])
   }
   // один провод до входа рейки 2
   add([left, [left[0], 150 + pole * 8], [q2in[0], 150 + pole * 8], q2in], 'ret', pole, ret)
@@ -269,7 +267,7 @@ function draw() {
     <text class="pt" x="${deye.x + 230}" y="${deye.y + 14}">LOAD</text>
     <text class="note" x="${deye.x + 14}" y="${deye.y + 52}">GEN пусто. Батарея SE-F16 без DC-автомата 200 А. PE на инвертор с общей шины, не через переключатель.</text></g>`
   const group = (b) => (st.includes(b) ? 'storage' : 'apartment')
-  svg.innerHTML = paths + bars + [...r1, ...r2, ...st, tb].map((b) => card(b, group(b))).join('') + inv + labels
+  svg.innerHTML = paths + bars + [...r1, ...r2, ...st, klemm].map((b) => card(b, group(b))).join('') + inv + labels
   document.getElementById('status').textContent =
     `рейка 1: ${NAME[s.rail1]} · рейка 2: ${NAME[s.rail2]} · кладовка: ${NAME[s.storageLoads]} · возврат: ${NAME[s.returnPair]}`
   document.querySelectorAll('button').forEach((b) => b.classList.toggle('on', pos[b.dataset.g] === Number(b.dataset.v)))

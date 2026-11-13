@@ -135,12 +135,13 @@ const spareBoxes = spare.map((item, i) => {
   port(b, 'N', b.x + b.w / 2, b.y + b.h, 'N')
   return b
 })
-const tb = box(668, sY, 64, H, 'Колодка', 'розетка+свет')
-port(tb, 'L', tb.x + tb.w / 2, tb.y, 'L')
-port(tb, 'N', tb.x + tb.w / 2, tb.y + tb.h, 'N')
-const sock = box(750, sY, 68, H, 'Розетка', 'MC116', 'sock')
-const lamp = box(836, sY, 68, H, 'Свет', 'MC110', 'lamp')
+const sock = box(668, sY, 68, H, 'Розетка', 'MC116', 'sock')
+const lamp = box(752, sY, 68, H, 'Свет', 'MC110', 'lamp')
 ;[sock, lamp].forEach((b) => { port(b, 'L', b.x + b.w / 2, b.y, 'L'); port(b, 'N', b.x + b.w / 2, b.y + b.h, 'N') })
+// клеммник внизу щита, не на DIN-рейке
+const klemm = box(668, sY + H + 48, 152, 36, 'Клеммы', 'низ щита')
+port(klemm, 'L', klemm.x + 40, klemm.y, 'L')
+port(klemm, 'N', klemm.x + 112, klemm.y, 'N')
 
 const deye = { x: 16, y: 880, w: 700, h: 120 }
 const bat = { x: 740, y: 880, w: 230, h: 120 }
@@ -214,13 +215,13 @@ for (let pole = 0; pole < 2; pole++) {
   add([o, oTee], 'ret', pole, outG)
   add([oTee, oLeft], 'ret', pole, outG)
   add([oTee, oRight], 'sto', pole, outG)
+  // правый луч → клеммы внизу щита → автоматы на рейке
   if (pole === 0) {
-    const yTb = sY - 90
-    add([oRight, { x: oRight.x, y: yTb }, { x: tb.p.L.x, y: yTb }, tb.p.L], 'sto', 0, outG)
-    go(tb.p.L, sock.p.L, yTb - 18, 'sto', 0, 'sockL', ['sock'])
-    go(tb.p.L, lamp.p.L, yTb - 40, 'sto', 0, 'lampL', ['lamp'])
+    add([oRight, { x: oRight.x, y: klemm.y - 20 }, { x: klemm.p.L.x, y: klemm.y - 20 }, klemm.p.L], 'sto', 0, outG)
+    go(klemm.p.L, sock.p.L, sY - 28, 'sto', 0, 'sockL', ['sock'])
+    go(klemm.p.L, lamp.p.L, sY - 48, 'sto', 0, 'lampL', ['lamp'])
   } else {
-    add([oRight, { x: tb.p.N.x, y: oRight.y }, { x: tb.p.N.x, y: tb.p.N.y }, tb.p.N], 'sto', 1, outG)
+    add([oRight, { x: oRight.x, y: klemm.y - 20 - PS }, { x: klemm.p.N.x, y: klemm.y - 20 - PS }, klemm.p.N], 'sto', 1, outG)
   }
   // подвод в клемму слева по уровню терминала — не пересекает Y
   const land = { x: q2in.x - 44, y: q2in.y }
@@ -262,10 +263,10 @@ for (const b of spareBoxes) add([{ x: b.p.L.x, y: bus2 }, b.p.L], 'rail2', 0, 'r
 const n2 = r2Y + R2H + 40
 add([dif2.p.outN, { x: dif2.p.outN.x, y: n2 }, { x: spareBoxes.at(-1).p.N.x, y: n2 }], 'rail2', 1, 'r2N', viaDif)
 for (const b of spareBoxes) add([b.p.N, { x: b.p.N.x, y: n2 }], 'rail2', 1, 'r2N', [...viaDif, b.id])
-const n3 = sY + H + 50
-add([tb.p.N, { x: tb.p.N.x, y: n3 }], 'sto', 1, 'stoN')
-add([sock.p.N, { x: sock.p.N.x, y: n3 }, { x: tb.p.N.x, y: n3 }], 'sto', 1, 'stoN', ['sock'])
-add([lamp.p.N, { x: lamp.p.N.x, y: n3 }, { x: tb.p.N.x, y: n3 }], 'sto', 1, 'stoN', ['lamp'])
+const n3 = klemm.y + klemm.h + 24
+add([klemm.p.N, { x: klemm.p.N.x, y: n3 }], 'sto', 1, 'stoN')
+add([sock.p.N, { x: sock.p.N.x, y: n3 }, { x: klemm.p.N.x, y: n3 }], 'sto', 1, 'stoN', ['sock'])
+add([lamp.p.N, { x: lamp.p.N.x, y: n3 }, { x: klemm.p.N.x, y: n3 }], 'sto', 1, 'stoN', ['lamp'])
 const peY = deye.y + deye.h + 100
 add([peD, { x: peD.x, y: peY }, { x: 16, y: peY }], 'pe', 0)
 applyHops(wires)
@@ -332,15 +333,15 @@ function draw() {
     <text class="n" x="560" y="${n1 + 20}">N1 · ноль тяжёлых, после Диф 63 А. С N2 и N3 не соединять</text>
     <rect class="barN ${paint(s.rail2 === 'grid' ? 'grid' : s.rail2 === 'load' ? 'load' : 'dead', 1, s, viaDif)}" x="16" y="${n2}" width="1520" height="8" rx="2"/>
     <text class="n" x="16" y="${n2 + 18}">N2 · ноль рейки 2, после дифа 32 А</text>
-    <rect class="barN ${paint(s.storageLoads === 'grid' ? 'grid' : s.storageLoads === 'load' ? 'load' : 'dead', 1, s)}" x="668" y="${n3}" width="236" height="8" rx="2"/>
-    <text class="n" x="668" y="${n3 - 8}">N3 кладовка · после колодки</text>
+    <rect class="barN ${paint(s.storageLoads === 'grid' ? 'grid' : s.storageLoads === 'load' ? 'load' : 'dead', 1, s)}" x="668" y="${n3}" width="160" height="8" rx="2"/>
+    <text class="n" x="668" y="${n3 - 8}">N3 кладовка · с клемм низа щита</text>
     <rect class="pebar" x="16" y="${peY}" width="1560" height="8"/>
     <text class="n" x="16" y="${peY - 6}">PE общий, на переключатели не заходит</text>`
   const frames = `<rect class="panel" x="8" y="8" width="1360" height="${Y + H + 40}" rx="10"/>
     <text class="t" x="16" y="24">Квартира · рейка 1</text>
     <rect class="panel" x="8" y="${r2Y - 16}" width="1580" height="${R2H + 76}" rx="10"/>
     <text class="t" x="16" y="${r2Y - 40}">Квартира · рейка 2</text>
-    <rect class="panel" x="8" y="${sY - 28}" width="920" height="${H + 118}" rx="10"/>
+    <rect class="panel" x="8" y="${sY - 28}" width="920" height="${H + 150}" rx="10"/>
     <text class="t" x="16" y="${sY - 18}">Кладовка</text>`
   const legend = `<rect class="card" x="990" y="${deye.y}" width="560" height="196" rx="8"/>
     <text class="t" x="1002" y="${deye.y + 20}">Куда садится каждая пара</text>
@@ -349,7 +350,7 @@ function draw() {
     <text class="s" x="1002" y="${deye.y + 74}">Низ справа пара II: 4 и 8. В квартире II — возврат из кладовки.</text>
     <text class="s" x="1002" y="${deye.y + 90}">Автоматы и ЗУБР: вход сверху, выход снизу. ЗУБР сверху 1 и 2, снизу 3 и 4. Переключатель — исключение: выход сверху, два входа снизу.</text>
     <text class="s" x="1002" y="${deye.y + 106}">Город в квартирный переключатель заходит после ЗУБР.</text>
-    <text class="s" x="1002" y="${deye.y + 128}">Выход переключателя кладовки: гильза → колодка розетка/свет и → вход рейки 2.</text>
+    <text class="s" x="1002" y="${deye.y + 128}">Выход переключателя кладовки: гильза → клеммы низа щита (розетка/свет) и → вход рейки 2.</text>
     <text class="s" x="1002" y="${deye.y + 144}">Возврат доходит до ввода рейки 2; там Y — новый провод на пару II квартирного переключателя.</text>
     <text class="s" x="1002" y="${deye.y + 160}">N1, N2 и N3 между собой не соединять.</text>
     <text class="s" x="1002" y="${deye.y + 176}">Потолок четырёх рабочих жил — 32 А. DC-автомата 200 А на АКБ нет.</text>
@@ -374,7 +375,7 @@ function draw() {
     <text class="s" x="${deye.x + deye.w + 8}" y="${deye.y + 70}">B−</text>`
   const pills = `<rect class="pill" x="1320" y="150" width="92" height="16" rx="8"/><text class="s" x="1328" y="162">5×6 город</text>
     <rect class="pill" x="1320" y="172" width="126" height="16" rx="8"/><text class="s" x="1328" y="184">5×6 возврат, 32 А</text>`
-  const cards = [city, zA, sA, pzv, qIn, zS, qG, qL, sS, tb, q2, dif2, sock, lamp, ...heavyBoxes, ...spareBoxes].map(card).join('')
+  const cards = [city, zA, sA, pzv, qIn, zS, qG, qL, sS, q2, dif2, sock, lamp, klemm, ...heavyBoxes, ...spareBoxes].map(card).join('')
   svg.querySelectorAll('.dyn').forEach((n) => n.remove())
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
   g.setAttribute('class', 'dyn')
