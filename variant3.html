@@ -131,8 +131,11 @@ const spareBoxes = spare.map((item, i) => {
   port(b, 'N', b.x + b.w / 2, b.y + b.h, 'N')
   return b
 })
-const sock = box(582, sY, 56, H, 'Розетка', 'MC116', 'sock')
-const lamp = box(650, sY, 56, H, 'Свет', 'MC110', 'lamp')
+const tb = box(576, sY, 52, H, 'Колодка', 'розетка+свет')
+port(tb, 'L', tb.x + tb.w / 2, tb.y, 'L')
+port(tb, 'N', tb.x + tb.w / 2, tb.y + tb.h, 'N')
+const sock = box(644, sY, 56, H, 'Розетка', 'MC116', 'sock')
+const lamp = box(712, sY, 56, H, 'Свет', 'MC110', 'lamp')
 ;[sock, lamp].forEach((b) => { port(b, 'L', b.x + b.w / 2, b.y, 'L'); port(b, 'N', b.x + b.w / 2, b.y + b.h, 'N') })
 
 const deye = { x: 16, y: 760, w: 700, h: 120 }
@@ -193,22 +196,28 @@ for (let pole = 0; pole < 2; pole++) {
   add([lFrom, { x: lFrom.x, y: yLoad }, { x: lIn.x, y: yLoad }, lIn], 'load', pole)
   go(qL.p['out' + k], sS.p['ii' + k], 672, 'load', pole, undefined, viaQL)
   const ret = 'ret' + pole
-  const retG = { x: R + 24 + pole * 12, y: 440 + pole * 11 }
-  go(sS.p['o' + k], retG, 440, 'ret', pole, ret)
+  const o = sS.p['o' + k]
+  const q2in = q2.p['in' + k]
+  // разветление на выходе переключателя кладовки: колодка / возврат на рейку 2
+  if (pole === 0) {
+    go(o, tb.p.L, 414, 'sto', 0, 'tbL')
+    go(tb.p.L, sock.p.L, 400, 'sto', 0, 'sockL', ['sock'])
+    go(tb.p.L, lamp.p.L, 388, 'sto', 0, 'lampL', ['lamp'])
+  } else {
+    go(o, tb.p.N, 672, 'sto', 1, 'tbN')
+  }
+  go(o, q2in, 268, 'ret', pole, ret)
+  // разветление на входе рейки 2: в автомат и вверх в переключатель квартиры
+  const retG = { x: R + 24 + pole * 12, y: 268 + pole * 11 }
   const retTop = { x: retG.x, y: 198 + pole * 11 }
-  add([retG, retTop], 'ret', pole, ret)
+  add([q2in, { x: q2in.x, y: retG.y }, retG, retTop], 'ret', pole, ret)
   go(retTop, sA.p['ii' + k], 198, 'ret', pole, ret)
-  go(retG, q2.p['in' + k], 268, 'ret', pole, ret)
   const q2o = q2.p['out' + k]
   const dIn = dif2.p['in' + k]
   const rise = pole ? dif2.x + dif2.w + 4 : q2.x + q2.w + 4
   const y2 = q2o.y + 8 + pole * 11
   const yIn2 = 252 + pole * 11
   add([q2o, { x: q2o.x, y: y2 }, { x: rise, y: y2 }, { x: rise, y: yIn2 }, { x: dIn.x, y: yIn2 }, dIn], 'rail2', pole, undefined, viaQ2)
-  if (pole === 0) {
-    go(sS.p.oL, sock.p.L, 414, 'sto', 0, 'sockL', ['sock'])
-    go(sS.p.oL, lamp.p.L, 414, 'sto', 0, 'lampL', ['lamp'])
-  }
 }
 add([sA.p.oL, { x: sA.p.oL.x, y: 12 }, { x: pzv.p.inL.x, y: 12 }, pzv.p.inL], 'rail1', 0)
 add([sA.p.oN, { x: sA.p.oN.x, y: 23 }, { x: pzv.p.inN.x, y: 23 }, pzv.p.inN], 'rail1', 1)
@@ -228,8 +237,9 @@ for (const b of spareBoxes) add([{ x: b.p.L.x, y: bus2 }, b.p.L], 'rail2', 0, 'r
 const n2 = 424
 add([dif2.p.outN, { x: dif2.p.outN.x, y: n2 }, { x: spareBoxes.at(-1).p.N.x, y: n2 }], 'rail2', 1, 'r2N', viaDif)
 for (const b of spareBoxes) add([b.p.N, { x: b.p.N.x, y: n2 }], 'rail2', 1, 'r2N', [...viaDif, b.id])
-add([sock.p.N, { x: sock.p.N.x, y: 672 }], 'sto', 1, 'stoN', ['sock'])
-add([lamp.p.N, { x: lamp.p.N.x, y: 672 }, { x: sock.p.N.x, y: 672 }], 'sto', 1, 'stoN', ['lamp'])
+add([tb.p.N, { x: tb.p.N.x, y: 672 }], 'sto', 1, 'stoN')
+add([sock.p.N, { x: sock.p.N.x, y: 672 }, { x: tb.p.N.x, y: 672 }], 'sto', 1, 'stoN', ['sock'])
+add([lamp.p.N, { x: lamp.p.N.x, y: 672 }, { x: tb.p.N.x, y: 672 }], 'sto', 1, 'stoN', ['lamp'])
 add([peD, { x: peD.x, y: 980 }, { x: 16, y: 980 }], 'pe', 0)
 applyHops(wires)
 
@@ -295,15 +305,15 @@ function draw() {
     <text class="n" x="490" y="${n1 + 20}">N1 · ноль тяжёлых, после Диф 63 А. С N2 и N3 не соединять</text>
     <rect class="barN ${paint(s.rail2 === 'grid' ? 'grid' : s.rail2 === 'load' ? 'load' : 'dead', 1, s, viaDif)}" x="16" y="${n2}" width="1520" height="8" rx="2"/>
     <text class="n" x="16" y="${n2 + 18}">N2 · ноль рейки 2, после дифа 32 А</text>
-    <rect class="barN ${paint(s.storageLoads === 'grid' ? 'grid' : s.storageLoads === 'load' ? 'load' : 'dead', 1, s)}" x="582" y="672" width="124" height="8" rx="2"/>
-    <text class="n" x="582" y="664">N3 кладовка</text>
+    <rect class="barN ${paint(s.storageLoads === 'grid' ? 'grid' : s.storageLoads === 'load' ? 'load' : 'dead', 1, s)}" x="576" y="672" width="192" height="8" rx="2"/>
+    <text class="n" x="576" y="664">N3 кладовка · после колодки</text>
     <rect class="pebar" x="16" y="980" width="1560" height="8"/>
     <text class="n" x="16" y="974">PE общий, на переключатели не заходит</text>`
   const frames = `<rect class="panel" x="8" y="8" width="1300" height="250" rx="10"/>
     <text class="t" x="16" y="24">Квартира · рейка 1</text>
     <rect class="panel" x="8" y="268" width="1540" height="176" rx="10"/>
     <text class="t" x="16" y="244">Квартира · рейка 2</text>
-    <rect class="panel" x="8" y="468" width="720" height="230" rx="10"/>
+    <rect class="panel" x="8" y="468" width="780" height="230" rx="10"/>
     <text class="t" x="16" y="478">Кладовка</text>`
   const legend = `<rect class="card" x="990" y="760" width="560" height="196" rx="8"/>
     <text class="t" x="1002" y="780">Куда садится каждая пара</text>
@@ -312,8 +322,8 @@ function draw() {
     <text class="s" x="1002" y="834">Низ справа пара II: 4 и 8. В квартире II — возврат из кладовки.</text>
     <text class="s" x="1002" y="850">Автоматы и ЗУБР: вход сверху, выход снизу. ЗУБР сверху 1 и 2, снизу 3 и 4. Переключатель — исключение: выход сверху, два входа снизу.</text>
     <text class="s" x="1002" y="866">Город в квартирный переключатель заходит после ЗУБР.</text>
-    <text class="s" x="1002" y="888">Разветвление только с клеммы выхода, две жилы в одной гильзе. Рычаг на автомате — вкл/выкл.</text>
-    <text class="s" x="1002" y="904">5×6: город в кладовку и возврат обратно, пятая жила PE.</text>
+    <text class="s" x="1002" y="888">Выход переключателя кладовки: гильза → колодка розетка/свет и → вход рейки 2.</text>
+    <text class="s" x="1002" y="904">На входе рейки 2 гильза: в автомат ввода и вверх в пару II квартирного переключателя.</text>
     <text class="s" x="1002" y="920">N1, N2 и N3 между собой не соединять.</text>
     <text class="s" x="1002" y="936">Потолок четырёх рабочих жил — 32 А. DC-автомата 200 А на АКБ нет.</text>
     <text class="s" x="1002" y="952">GEN не используется.</text>`
@@ -337,7 +347,7 @@ function draw() {
     <text class="s" x="${deye.x + deye.w + 8}" y="${deye.y + 70}">B−</text>`
   const pills = `<rect class="pill" x="1320" y="150" width="92" height="16" rx="8"/><text class="s" x="1328" y="162">5×6 город</text>
     <rect class="pill" x="1320" y="172" width="126" height="16" rx="8"/><text class="s" x="1328" y="184">5×6 возврат, 32 А</text>`
-  const cards = [city, zA, sA, pzv, qIn, zS, qG, qL, sS, q2, dif2, sock, lamp, ...heavyBoxes, ...spareBoxes].map(card).join('')
+  const cards = [city, zA, sA, pzv, qIn, zS, qG, qL, sS, tb, q2, dif2, sock, lamp, ...heavyBoxes, ...spareBoxes].map(card).join('')
   svg.querySelectorAll('.dyn').forEach((n) => n.remove())
   const g = document.createElementNS('http://www.w3.org/2000/svg', 'g')
   g.setAttribute('class', 'dyn')
