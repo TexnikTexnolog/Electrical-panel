@@ -15,11 +15,11 @@
   .card { fill: #fffef9; stroke: #e0a030; stroke-width: 1.6; }
   .inv { fill: #fff4d2; stroke: #e0a030; stroke-width: 1.6; }
   .dot { fill: #fff; stroke: #c98920; stroke-width: 1.4; }
-  .t { font-size: 12px; font-weight: 700; fill: #222; }
-  .s { font-size: 10px; fill: #444; }
-  .n { font-size: 11px; fill: #333; }
-  .w { fill: none; stroke-width: 2.2; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
-  .hit { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
+  .t { font-size: 13px; font-weight: 700; fill: #222; }
+  .s { font-size: 11px; fill: #444; }
+  .n { font-size: 12px; fill: #333; }
+  .w { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; pointer-events: none; }
+  .hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
   .run:hover .w { stroke-width: 5; filter: drop-shadow(0 0 2px #fff); }
   .grid-L { stroke: #9a5a22; } .grid-N { stroke: #2a62d6; }
   .load-L { stroke: #ef8a00; } .load-N { stroke: #3eb4e8; }
@@ -45,7 +45,7 @@
   <span id="badge" class="ok"></span>
   <span id="status"></span>
 </header>
-<svg id="svg" viewBox="0 0 1640 1140">
+<svg id="svg" viewBox="0 0 1720 1180">
   <defs>
     <pattern id="pe" width="8" height="8" patternUnits="userSpaceOnUse">
       <rect width="8" height="8" fill="#f2d600"/>
@@ -72,24 +72,25 @@ function port(b, id, x, y, label) { b.p[id] = { x, y, label } }
 function add(pts, kind, pole, g, via) {
   wires.push({ pts, kind, pole, g: g ?? 's' + wires.length, via })
 }
+const PS = 16 // зазор L/N на параллельных трассах
 function go(a, b, y, kind, pole, g, via) {
-  const yy = y + pole * 11
+  const yy = y + pole * PS
   add([a, { x: a.x, y: yy }, { x: b.x, y: yy }, b], kind, pole, g, via)
 }
 
-const Y = 36, H = 126
-const city = box(16, Y, 94, H, 'Ввод 40 А', 'MC240A · 3×10', 'city')
-const zA = box(126, Y, 104, H, 'ЗУБР', 'MF2-63 red', 'zA')
-const sA = box(246, Y, 142, H, 'Переключатель I-0-II', 'квартира')
-const pzv = box(404, Y, 104, H, 'Диф 63 А', 'CDA263D', 'pzv')
+const Y = 36, H = 140
+const city = box(16, Y, 102, H, 'Ввод 40 А', 'MC240A · 3×10', 'city')
+const zA = box(134, Y, 112, H, 'ЗУБР', 'MF2-63 red', 'zA')
+const sA = box(262, Y, 152, H, 'Переключатель I-0-II', 'квартира')
+const pzv = box(430, Y, 112, H, 'Диф 63 А', 'CDA263D', 'pzv')
 const gapR1R2 = 40
 const gapR2Sto = 80 // вдвое больше сдвига, чем между рейками
 const sY = 496 + gapR1R2 + gapR2Sto
-const qIn = box(16, sY, 94, H, 'Ввод 32 А', 'MC232A', 'qIn')
-const zS = box(126, sY, 104, H, 'ЗУБР', 'MF2-63 red', 'zS')
-const qG = box(246, sY, 94, H, 'На Grid', 'MC232A', 'qG')
-const qL = box(356, sY, 94, H, 'С Load', 'MC232A', 'qL')
-const sS = box(466, sY, 142, H, 'Переключатель I-0-II', 'кладовка')
+const qIn = box(16, sY, 102, H, 'Ввод 32 А', 'MC232A', 'qIn')
+const zS = box(134, sY, 112, H, 'ЗУБР', 'MF2-63 red', 'zS')
+const qG = box(262, sY, 102, H, 'На Grid', 'MC232A', 'qG')
+const qL = box(380, sY, 102, H, 'С Load', 'MC232A', 'qL')
+const sS = box(498, sY, 152, H, 'Переключатель I-0-II', 'кладовка')
 
 function topBottom(b, inL, inN, outL, outN) {
   port(b, 'inL', b.x + 18, b.y, inL)
@@ -117,28 +118,28 @@ function sftPorts(b) {
 const heavy = d.apartmentRail1.slice(4)
 const spare = d.apartmentRail2.slice(2)
 const heavyBoxes = heavy.map((item, i) => {
-  const b = box(524 + i * 106, Y, 102, H, item.name, item.part + (item.ferrule ? ' · ' + item.ferrule : ''), 'h' + i)
+  const b = box(560 + i * 114, Y, 110, H, item.name, item.part + (item.ferrule ? ' · ' + item.ferrule : ''), 'h' + i)
   port(b, 'L', b.x + b.w / 2, b.y, String(i + 1))
   port(b, 'N', b.x + b.w / 2, b.y + b.h, 'N')
   return b
 })
 const r2Y = 284 + gapR1R2
-const R2H = 112
-const q2 = box(16, r2Y, 104, R2H, 'Ввод рейки 2', 'MC232A', 'q2')
-const dif2 = box(136, r2Y, 104, R2H, 'Диф 32 А', 'ADA982D', 'dif2')
+const R2H = 124
+const q2 = box(16, r2Y, 112, R2H, 'Ввод рейки 2', 'MC232A', 'q2')
+const dif2 = box(146, r2Y, 112, R2H, 'Диф 32 А', 'ADA982D', 'dif2')
 topBottom(q2, 'L', 'N', 'L', 'N')
 topBottom(dif2, 'L', 'N', 'L', 'N')
 const spareBoxes = spare.map((item, i) => {
-  const b = box(268 + i * 104, r2Y, 100, R2H, item.name, item.ferrule || item.part, 'sp' + i)
+  const b = box(286 + i * 112, r2Y, 108, R2H, item.name, item.ferrule || item.part, 'sp' + i)
   port(b, 'L', b.x + b.w / 2, b.y, String(i + 1))
   port(b, 'N', b.x + b.w / 2, b.y + b.h, 'N')
   return b
 })
-const tb = box(624, sY, 58, H, 'Колодка', 'розетка+свет')
+const tb = box(668, sY, 64, H, 'Колодка', 'розетка+свет')
 port(tb, 'L', tb.x + tb.w / 2, tb.y, 'L')
 port(tb, 'N', tb.x + tb.w / 2, tb.y + tb.h, 'N')
-const sock = box(698, sY, 62, H, 'Розетка', 'MC116', 'sock')
-const lamp = box(776, sY, 62, H, 'Свет', 'MC110', 'lamp')
+const sock = box(750, sY, 68, H, 'Розетка', 'MC116', 'sock')
+const lamp = box(836, sY, 68, H, 'Свет', 'MC110', 'lamp')
 ;[sock, lamp].forEach((b) => { port(b, 'L', b.x + b.w / 2, b.y, 'L'); port(b, 'N', b.x + b.w / 2, b.y + b.h, 'N') })
 
 const deye = { x: 16, y: 880, w: 700, h: 120 }
@@ -161,89 +162,88 @@ const viaPzv = ['pzv']
 for (let pole = 0; pole < 2; pole++) {
   const k = pole ? 'N' : 'L'
   const inn = city.p['in' + k]
-  const yTop = 20 + pole * 11
+  const yTop = 18 + pole * PS
   add([{ x: 2, y: yTop }, { x: inn.x, y: yTop }, inn], 'grid', pole)
   const cityRun = 'city' + pole
   const out = city.p['out' + k]
   const zin = zA.p['in' + k]
-  const gap = 114 + pole * 10
-  // короткий выход → Y-развилка под углом влево/вправо, дальше два провода
-  const tee = { x: out.x, y: out.y + 12 }
-  const left = { x: out.x - 22, y: out.y + 28 }
-  const right = { x: out.x + 22, y: out.y + 28 }
+  const gap = 128 + pole * 14
+  // короткий выход → Y; вся звезда в одной группе — подсветка целиком
+  const tee = { x: out.x, y: out.y + 16 }
+  const left = { x: out.x - 32, y: out.y + 36 }
+  const right = { x: out.x + 32, y: out.y + 36 }
   add([out, tee], 'grid', pole, cityRun, viaCity)
   add([tee, left], 'grid', pole, cityRun, viaCity)
   add([tee, right], 'grid', pole, cityRun, viaCity)
   add([right, { x: gap, y: right.y }, { x: gap, y: yTop }, { x: zin.x, y: yTop }, zin], 'grid', pole, cityRun, viaCity)
-  const yCable = 220 + pole * 11
-  const cityG = { x: R + pole * 12, y: yCable }
+  const yCable = 230 + pole * PS
+  const cityG = { x: R + pole * 20, y: yCable }
   add([left, { x: left.x, y: yCable }, cityG], 'grid', pole, cityRun, viaCity)
-  const yIn = sY - 36 + pole * 11
-  const cityIn = { x: R + pole * 12, y: yIn }
+  const yIn = sY - 40 + pole * PS
+  const cityIn = { x: R + pole * 20, y: yIn }
   add([cityG, cityIn], 'grid', pole, cityRun, viaCity)
-  go(cityIn, qIn.p['in' + k], sY - 36, 'grid', pole, cityRun, viaCity)
-  go(zA.p['out' + k], sA.p['i' + k], 178, 'grid', pole, undefined, viaZA)
+  go(cityIn, qIn.p['in' + k], sY - 40, 'grid', pole, cityRun, viaCity)
+  go(zA.p['out' + k], sA.p['i' + k], 188, 'grid', pole, undefined, viaZA)
   const split = 'split' + pole
   const qOut = qIn.p['out' + k]
   const zIn = zS.p['in' + k]
-  const gxs = 114 + pole * 10
-  const yq = qOut.y + 10 + pole * 11
-  const yzIn = zIn.y - 16 + pole * 11
+  const gxs = 128 + pole * 14
+  const yq = qOut.y + 14 + pole * PS
+  const yzIn = zIn.y - 20 + pole * PS
   add([qOut, { x: qOut.x, y: yq }, { x: gxs, y: yq }, { x: gxs, y: yzIn }, { x: zIn.x, y: yzIn }, zIn], 'grid', pole, split, viaQin)
-  go(qOut, sS.p['i' + k], sY + 150, 'grid', pole, split, viaQin)
+  go(qOut, sS.p['i' + k], sY + 160, 'grid', pole, split, viaQin)
   const zOut = zS.p['out' + k]
   const gIn = qG.p['in' + k]
-  const gxb = 236 + pole * 10
-  const yz = zOut.y + 10 + pole * 11
-  const yg = gIn.y - 16 + pole * 11
+  const gxb = 256 + pole * 14
+  const yz = zOut.y + 14 + pole * PS
+  const yg = gIn.y - 20 + pole * PS
   add([zOut, { x: zOut.x, y: yz }, { x: gxb, y: yz }, { x: gxb, y: yg }, { x: gIn.x, y: yg }, gIn], 'grid', pole, undefined, viaZS)
   add([pole ? qG.p.outN : qG.p.outL, pole ? gN : gL], 'grid', pole, undefined, viaQG)
   const lIn = qL.p['in' + k]
   const lFrom = pole ? lN : lL
-  const yLoad = sY - 14 + pole * 10
+  const yLoad = sY - 18 + pole * 14
   add([lFrom, { x: lFrom.x, y: yLoad }, { x: lIn.x, y: yLoad }, lIn], 'load', pole)
-  go(qL.p['out' + k], sS.p['ii' + k], sY + 176, 'load', pole, undefined, viaQL)
-  const ret = 'ret' + pole
+  go(qL.p['out' + k], sS.p['ii' + k], sY + H + 40, 'load', pole, undefined, viaQL)
+  const outG = 'sftOut' + pole
   const o = sS.p['o' + k]
   const q2in = q2.p['in' + k]
-  // короткий выход вверх → Y влево/вправо: колодка / рейка 2
-  const oTee = { x: o.x, y: o.y - 12 }
-  const oLeft = { x: o.x - 22, y: o.y - 28 }
-  const oRight = { x: o.x + 22, y: o.y - 28 }
-  add([o, oTee], 'ret', pole, ret)
-  add([oTee, oLeft], 'ret', pole, ret)
-  add([oTee, oRight], 'sto', pole, 'tbFork' + pole)
+  // Y на выходе переключателя: stub+оба луча+обе трассы в одной группе
+  const oTee = { x: o.x, y: o.y - 16 }
+  const oLeft = { x: o.x - 32, y: o.y - 36 }
+  const oRight = { x: o.x + 32, y: o.y - 36 }
+  add([o, oTee], 'ret', pole, outG)
+  add([oTee, oLeft], 'ret', pole, outG)
+  add([oTee, oRight], 'sto', pole, outG)
   if (pole === 0) {
-    const yTb = sY - 82
-    add([oRight, { x: oRight.x, y: yTb }, { x: tb.p.L.x, y: yTb }, tb.p.L], 'sto', 0, 'tbL')
-    go(tb.p.L, sock.p.L, yTb - 14, 'sto', 0, 'sockL', ['sock'])
-    go(tb.p.L, lamp.p.L, yTb - 26, 'sto', 0, 'lampL', ['lamp'])
+    const yTb = sY - 90
+    add([oRight, { x: oRight.x, y: yTb }, { x: tb.p.L.x, y: yTb }, tb.p.L], 'sto', 0, outG)
+    go(tb.p.L, sock.p.L, yTb - 18, 'sto', 0, 'sockL', ['sock'])
+    go(tb.p.L, lamp.p.L, yTb - 40, 'sto', 0, 'lampL', ['lamp'])
   } else {
-    add([oRight, { x: tb.p.N.x, y: oRight.y }, { x: tb.p.N.x, y: tb.p.N.y }, tb.p.N], 'sto', 1, 'tbN')
+    add([oRight, { x: tb.p.N.x, y: oRight.y }, { x: tb.p.N.x, y: tb.p.N.y }, tb.p.N], 'sto', 1, outG)
   }
-  // один провод до входа «Ввод рейки 2», без раннего отвода в квартиру
-  const yQ2 = r2Y - 16 + pole * 11
-  add([oLeft, { x: oLeft.x, y: yQ2 }, { x: q2in.x, y: yQ2 }, q2in], 'ret', pole, ret)
-  // на входе MC232A: короткий выход → Y, новый провод на переключатель квартиры
-  const qTee = { x: q2in.x, y: q2in.y - 12 }
-  const qLeft = { x: q2in.x - 22, y: q2in.y - 28 }
-  const qRight = { x: q2in.x + 22, y: q2in.y - 28 }
-  add([q2in, qTee], 'ret', pole, ret)
-  add([qTee, qLeft], 'ret', pole, ret)
-  add([qTee, qRight], 'ret', pole, ret)
-  const retG = { x: R + 24 + pole * 12, y: qRight.y }
-  const retTop = { x: retG.x, y: 198 + pole * 11 }
+  const yQ2 = r2Y - 20 + pole * PS
+  add([oLeft, { x: oLeft.x, y: yQ2 }, { x: q2in.x, y: yQ2 }, q2in], 'ret', pole, outG)
+  // Y на входе рейки 2 — та же группа, плюс новый провод в квартиру
+  const qTee = { x: q2in.x, y: q2in.y - 16 }
+  const qLeft = { x: q2in.x - 32, y: q2in.y - 36 }
+  const qRight = { x: q2in.x + 32, y: q2in.y - 36 }
+  add([q2in, qTee], 'ret', pole, outG)
+  add([qTee, qLeft], 'ret', pole, outG)
+  add([qTee, qRight], 'ret', pole, outG)
+  const retG = { x: R + 28 + pole * 20, y: qRight.y }
+  const retTop = { x: retG.x, y: 198 + pole * PS }
   const aptII = sA.p['ii' + k]
-  add([qRight, retG, retTop, { x: aptII.x, y: retTop.y }, aptII], 'ret', pole, ret + 'apt')
+  add([qRight, retG, retTop, { x: aptII.x, y: retTop.y }, aptII], 'ret', pole, outG)
   const q2o = q2.p['out' + k]
   const dIn = dif2.p['in' + k]
-  const rise = pole ? dif2.x + dif2.w + 4 : q2.x + q2.w + 4
-  const y2 = q2o.y + 8 + pole * 11
-  const yIn2 = r2Y - 32 + pole * 11
+  const rise = pole ? dif2.x + dif2.w + 8 : q2.x + q2.w + 8
+  const y2 = q2o.y + 12 + pole * PS
+  const yIn2 = r2Y - 36 + pole * PS
   add([q2o, { x: q2o.x, y: y2 }, { x: rise, y: y2 }, { x: rise, y: yIn2 }, { x: dIn.x, y: yIn2 }, dIn], 'rail2', pole, undefined, viaQ2)
 }
 add([sA.p.oL, { x: sA.p.oL.x, y: 12 }, { x: pzv.p.inL.x, y: 12 }, pzv.p.inL], 'rail1', 0)
-add([sA.p.oN, { x: sA.p.oN.x, y: 23 }, { x: pzv.p.inN.x, y: 23 }, pzv.p.inN], 'rail1', 1)
+add([sA.p.oN, { x: sA.p.oN.x, y: 12 + PS }, { x: pzv.p.inN.x, y: 12 + PS }, pzv.p.inN], 'rail1', 1)
 
 const busY = 18
 const gapP = pzv.x + pzv.w + 8
@@ -326,19 +326,19 @@ function draw() {
       const d = w.d
       return `<path class="hit" d="${d}"/><path class="w ${paint(w.kind, w.pole, s, w.via)}" d="${d}"/>`
     }).join('')}</g>`).join('')
-  const bars = `<rect class="barN ${paint(s.rail1 === 'grid' ? 'grid' : s.rail1 === 'load' ? 'load' : 'dead', 1, s, viaPzv)}" x="524" y="${n1}" width="840" height="8" rx="2"/>
-    <text class="n" x="524" y="${n1 + 20}">N1 · ноль тяжёлых, после Диф 63 А. С N2 и N3 не соединять</text>
+  const bars = `    <rect class="barN ${paint(s.rail1 === 'grid' ? 'grid' : s.rail1 === 'load' ? 'load' : 'dead', 1, s, viaPzv)}" x="560" y="${n1}" width="900" height="8" rx="2"/>
+    <text class="n" x="560" y="${n1 + 20}">N1 · ноль тяжёлых, после Диф 63 А. С N2 и N3 не соединять</text>
     <rect class="barN ${paint(s.rail2 === 'grid' ? 'grid' : s.rail2 === 'load' ? 'load' : 'dead', 1, s, viaDif)}" x="16" y="${n2}" width="1520" height="8" rx="2"/>
     <text class="n" x="16" y="${n2 + 18}">N2 · ноль рейки 2, после дифа 32 А</text>
-    <rect class="barN ${paint(s.storageLoads === 'grid' ? 'grid' : s.storageLoads === 'load' ? 'load' : 'dead', 1, s)}" x="624" y="${n3}" width="214" height="8" rx="2"/>
-    <text class="n" x="624" y="${n3 - 8}">N3 кладовка · после колодки</text>
+    <rect class="barN ${paint(s.storageLoads === 'grid' ? 'grid' : s.storageLoads === 'load' ? 'load' : 'dead', 1, s)}" x="668" y="${n3}" width="236" height="8" rx="2"/>
+    <text class="n" x="668" y="${n3 - 8}">N3 кладовка · после колодки</text>
     <rect class="pebar" x="16" y="${peY}" width="1560" height="8"/>
     <text class="n" x="16" y="${peY - 6}">PE общий, на переключатели не заходит</text>`
   const frames = `<rect class="panel" x="8" y="8" width="1360" height="${Y + H + 40}" rx="10"/>
     <text class="t" x="16" y="24">Квартира · рейка 1</text>
     <rect class="panel" x="8" y="${r2Y - 16}" width="1580" height="${R2H + 76}" rx="10"/>
     <text class="t" x="16" y="${r2Y - 40}">Квартира · рейка 2</text>
-    <rect class="panel" x="8" y="${sY - 28}" width="850" height="${H + 118}" rx="10"/>
+    <rect class="panel" x="8" y="${sY - 28}" width="920" height="${H + 118}" rx="10"/>
     <text class="t" x="16" y="${sY - 18}">Кладовка</text>`
   const legend = `<rect class="card" x="990" y="${deye.y}" width="560" height="196" rx="8"/>
     <text class="t" x="1002" y="${deye.y + 20}">Куда садится каждая пара</text>
